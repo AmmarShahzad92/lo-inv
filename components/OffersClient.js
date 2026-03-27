@@ -1,26 +1,99 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { deleteWithLog } from '@/lib/deleteWithLog'
+import { useApp } from '@/lib/AppContext'
+import {
+  getModelSuggestionsFromDB,
+  getProcessorSuggestionsFromDB,
+  getProcessorSpecsFromDB,
+  extractCPUKey,
+} from '@/lib/laptopKB'
 
-const RAM_OPTIONS       = ['4GB', '6GB', '8GB', '12GB', '16GB', '24GB', '32GB', '64GB']
-const STORAGE_OPTIONS   = ['128GB SSD', '256GB SSD', '512GB SSD', '1TB SSD', '2TB SSD', '256GB HDD', '512GB HDD', '1TB HDD']
+const RAM_OPTIONS = ['4GB', '6GB', '8GB', '12GB', '16GB', '24GB', '32GB', '64GB']
+const STORAGE_OPTIONS = ['128GB SSD', '256GB SSD', '512GB SSD', '1TB SSD', '2TB SSD', '256GB HDD', '512GB HDD', '1TB HDD']
 const SCREEN_SIZE_OPTIONS = ['10"', '11.6"', '12.5"', '13.3"', '14"', '15.6"', '16"', '17.3"']
 const CONDITION_OPTIONS = ['New', 'Excellent', 'Good', 'Fair']
 const COMPANY_SUGGESTIONS = ['Dell', 'HP', 'Lenovo', 'Apple', 'Asus', 'Acer', 'Toshiba', 'MSI', 'Samsung', 'LG', 'Huawei', 'Microsoft', 'Sony', 'Fujitsu']
 
 const CONDITION_COLORS = {
-  'New':       'var(--accent-green)',
+  'New': 'var(--accent-green)',
   'Excellent': '#3b82f6',
-  'Good':      '#f59e0b',
-  'Fair':      'var(--accent-red)',
+  'Good': '#f59e0b',
+  'Fair': 'var(--accent-red)',
 }
 
 const EMPTY_FORM = {
   vendor: 'Tahir', company: '', model: '', processor: '',
   screen_size: '', ram: '', storage: '', graphics_card: '',
   condition: '', cost_price: '', comment: '',
+  image_url_1: '', image_url_2: '', image_url_3: '',
+}
+
+// -- SmartInput: dropdown with autocomplete suggestions -----------------------
+function SmartInput({ value, onChange, onSelect, suggestions, placeholder, label, id, style }) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  const filtered = suggestions.filter(s =>
+    !value || s.toLowerCase().includes(value.toLowerCase())
+  ).slice(0, 12)
+
+  return (
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      {label && <label className="block text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1">{label}</label>}
+      <input
+        id={id}
+        className="form-input"
+        type="text"
+        value={value}
+        onChange={e => { onChange(e.target.value); setOpen(true) }}
+        onFocus={() => suggestions.length > 0 && setOpen(true)}
+        placeholder={placeholder || ''}
+        autoComplete="off"
+        style={style}
+      />
+      {open && filtered.length > 0 && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 300,
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-focus)',
+          borderRadius: '8px',
+          maxHeight: '180px',
+          overflowY: 'auto',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          marginTop: '3px',
+        }}>
+          {filtered.map((s, i) => (
+            <div
+              key={s}
+              onMouseDown={e => { e.preventDefault(); onSelect(s); setOpen(false) }}
+              style={{
+                padding: '7px 10px',
+                fontSize: '12px',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
+              }}
+              onMouseOver={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
+              onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+            >
+              {s}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function formatPKR(amount) {
@@ -49,38 +122,70 @@ const IS = { fontSize: '12px', width: '100%', padding: '5px 8px' }
 const SS = { ...IS, appearance: 'none' }
 
 /* ─── OfferCard: row on desktop, card on mobile, form when editing ─ */
-function OfferCard({ offer, onSave, onDelete, savingId, deletingId }) {
-  const [editing,   setEditing]   = useState(false)
-  const [open,      setOpen]      = useState(false)
+function OfferCard({ offer, onSave, onDelete, savingId, deletingId, laptopModels, processors }) {
+  const [editing, setEditing] = useState(false)
+  const [open, setOpen] = useState(false)
   const [formError, setFormError] = useState('')
-  const [form,      setForm]      = useState({
-    vendor:        offer.vendor        || 'Tahir',
-    company:       offer.company       || '',
-    model:         offer.model         || '',
-    processor:     offer.processor     || '',
-    screen_size:   offer.screen_size   || '',
-    ram:           offer.ram           || '',
-    storage:       offer.storage       || '',
+  const [form, setForm] = useState({
+    vendor: offer.vendor || 'Tahir',
+    company: offer.company || '',
+    model: offer.model || '',
+    processor: offer.processor || '',
+    screen_size: offer.screen_size || '',
+    ram: offer.ram || '',
+    storage: offer.storage || '',
     graphics_card: offer.graphics_card || '',
-    condition:     offer.condition     || '',
-    cost_price:    offer.cost_price    || '',
-    comment:       offer.comment       || '',
+    condition: offer.condition || '',
+    cost_price: offer.cost_price || '',
+    comment: offer.comment || '',
+    // Image URLs are for laptops catalog - not stored in vendor_offers
+    image_url_1: '',
+    image_url_2: '',
+    image_url_3: '',
   })
 
-  // Sync when offer updates (after save)
-  useMemo(() => {
+  // Knowledge base suggestions
+  const modelSuggestions = useMemo(() => {
+    if (!form.company) return []
+    return getModelSuggestionsFromDB(form.company, form.model, laptopModels)
+  }, [form.company, form.model, laptopModels])
+
+  const processorSuggestions = useMemo(() => {
+    if (!form.company || !form.model) return []
+    return getProcessorSuggestionsFromDB(form.company, form.model, laptopModels)
+  }, [form.company, form.model, laptopModels])
+
+  // Auto-fill GPU when processor is selected
+  function handleProcessorSelect(cpu) {
+    setForm(f => {
+      const specs = getProcessorSpecsFromDB(cpu, processors)
+      return {
+        ...f,
+        processor: cpu,
+        graphics_card: specs?.gpu || f.graphics_card,
+      }
+    })
+    setFormError('')
+  }
+
+  // Sync form with offer prop when not editing (e.g., after external update)
+  useEffect(() => {
     if (!editing) setForm({
-      vendor:        offer.vendor        || 'Tahir',
-      company:       offer.company       || '',
-      model:         offer.model         || '',
-      processor:     offer.processor     || '',
-      screen_size:   offer.screen_size   || '',
-      ram:           offer.ram           || '',
-      storage:       offer.storage       || '',
+      vendor: offer.vendor || 'Tahir',
+      company: offer.company || '',
+      model: offer.model || '',
+      processor: offer.processor || '',
+      screen_size: offer.screen_size || '',
+      ram: offer.ram || '',
+      storage: offer.storage || '',
       graphics_card: offer.graphics_card || '',
-      condition:     offer.condition     || '',
-      cost_price:    offer.cost_price    || '',
-      comment:       offer.comment       || '',
+      condition: offer.condition || '',
+      cost_price: offer.cost_price || '',
+      comment: offer.comment || '',
+      // Image URLs reset - they're for laptops, not stored in offers
+      image_url_1: '',
+      image_url_2: '',
+      image_url_3: '',
     })
   }, [offer, editing])
 
@@ -89,31 +194,34 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId }) {
   function handleCancel() {
     setEditing(false); setFormError('')
     setForm({
-      vendor:        offer.vendor        || 'Tahir',
-      company:       offer.company       || '',
-      model:         offer.model         || '',
-      processor:     offer.processor     || '',
-      screen_size:   offer.screen_size   || '',
-      ram:           offer.ram           || '',
-      storage:       offer.storage       || '',
+      vendor: offer.vendor || 'Tahir',
+      company: offer.company || '',
+      model: offer.model || '',
+      processor: offer.processor || '',
+      screen_size: offer.screen_size || '',
+      ram: offer.ram || '',
+      storage: offer.storage || '',
       graphics_card: offer.graphics_card || '',
-      condition:     offer.condition     || '',
-      cost_price:    offer.cost_price    || '',
-      comment:       offer.comment       || '',
+      condition: offer.condition || '',
+      cost_price: offer.cost_price || '',
+      comment: offer.comment || '',
+      image_url_1: '',
+      image_url_2: '',
+      image_url_3: '',
     })
   }
 
   async function handleSave() {
-    if (!form.vendor.trim())  { setFormError('Vendor required'); return }
+    if (!form.vendor.trim()) { setFormError('Vendor required'); return }
     if (!form.company.trim()) { setFormError('Company required'); return }
-    if (!form.model.trim())   { setFormError('Model required'); return }
+    if (!form.model.trim()) { setFormError('Model required'); return }
     const err = await onSave(offer.id, form)
     if (err) { setFormError(err); return }
     setEditing(false)
   }
 
-  const compact       = compactStorage(offer.storage)
-  const isSavingThis  = savingId   === offer.id
+  const compact = compactStorage(offer.storage)
+  const isSavingThis = savingId === offer.id
   const isDeletingThis = deletingId === offer.id
   const hasExtras = offer.screen_size || offer.graphics_card || offer.comment
 
@@ -123,12 +231,28 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId }) {
       <div className="laptop-card" style={{ borderColor: 'rgba(59,130,246,0.35)' }}>
         {formError && <div className="alert-error mb-2.5 text-[12px] py-2 px-3">{formError}</div>}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
-          <FormField label="Vendor *"><input name="vendor"  value={form.vendor}  onChange={handleChange} className="form-input" style={IS} placeholder="e.g. Tahir" /></FormField>
+          <FormField label="Vendor *"><input name="vendor" value={form.vendor} onChange={handleChange} className="form-input" style={IS} placeholder="e.g. Tahir" /></FormField>
           <FormField label="Company *"><input name="company" value={form.company} onChange={handleChange} className="form-input" style={IS} placeholder="e.g. Dell" list="oc-company-list" /></FormField>
-          <FormField label="Model *"><input name="model"   value={form.model}   onChange={handleChange} className="form-input" style={IS} placeholder="e.g. Latitude 7420" /></FormField>
+          <SmartInput
+            value={form.model}
+            onChange={v => { setForm(f => ({ ...f, model: v })); setFormError('') }}
+            onSelect={v => setForm(f => ({ ...f, model: v }))}
+            suggestions={modelSuggestions}
+            placeholder="e.g. Latitude 7420"
+            label="Model *"
+            style={IS}
+          />
         </div>
         <div className="mb-2">
-          <FormField label="Processor"><input name="processor" value={form.processor} onChange={handleChange} className="form-input" style={IS} placeholder="e.g. i7-1185G7" /></FormField>
+          <SmartInput
+            value={form.processor}
+            onChange={v => { setForm(f => ({ ...f, processor: v })); setFormError('') }}
+            onSelect={handleProcessorSelect}
+            suggestions={processorSuggestions}
+            placeholder="e.g. i7-1185G7"
+            label="Processor"
+            style={IS}
+          />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
           <FormField label="RAM"><select name="ram" value={form.ram} onChange={handleChange} className="form-input" style={SS}><option value="">—</option>{RAM_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}</select></FormField>
@@ -140,14 +264,23 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId }) {
           <FormField label="Price (PKR)"><input name="cost_price" type="number" value={form.cost_price} onChange={handleChange} className="form-input" style={IS} placeholder="e.g. 55000" min="0" step="500" /></FormField>
           <FormField label="GPU"><input name="graphics_card" value={form.graphics_card} onChange={handleChange} className="form-input" style={IS} placeholder="e.g. Intel Iris Xe" /></FormField>
         </div>
-        <div className="mb-3">
+        <div className="mb-2">
           <FormField label="Comment"><input name="comment" value={form.comment} onChange={handleChange} className="form-input" style={IS} placeholder="Optional notes" /></FormField>
+        </div>
+        {/* Image URLs - synced to Laptops catalog (optional, 0-3 URLs) */}
+        <div className="mb-3 p-2.5 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+          <div className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-2">Image URLs (synced to Laptops catalog, optional)</div>
+          <div className="grid grid-cols-1 gap-2">
+            <input name="image_url_1" value={form.image_url_1} onChange={handleChange} className="form-input" style={IS} placeholder="Image URL 1 (optional)" />
+            <input name="image_url_2" value={form.image_url_2} onChange={handleChange} className="form-input" style={IS} placeholder="Image URL 2 (optional)" />
+            <input name="image_url_3" value={form.image_url_3} onChange={handleChange} className="form-input" style={IS} placeholder="Image URL 3 (optional)" />
+          </div>
         </div>
         <div className="flex gap-1.5">
           <button onClick={handleSave} disabled={isSavingThis}
             className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg text-white text-[12px] font-medium cursor-pointer"
             style={{ background: 'var(--accent-blue)', border: 'none' }}>
-            {isSavingThis ? <div className="spinner" style={{ width: '12px', height: '12px' }} /> : <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Save</>}
+            {isSavingThis ? <div className="spinner" style={{ width: '12px', height: '12px' }} /> : <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> Save</>}
           </button>
           <button onClick={handleCancel}
             className="px-3 py-1.5 rounded-lg text-[12px] cursor-pointer"
@@ -197,8 +330,8 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId }) {
 
         {/* Col 3: RAM + Storage + Screen badges */}
         <div className="flex flex-wrap gap-1.5 shrink-0 md:w-44">
-          {offer.ram    && <span className="badge badge-blue  text-[11px]">{offer.ram}</span>}
-          {compact      && <span className="badge badge-green text-[11px]">{compact}</span>}
+          {offer.ram && <span className="badge badge-blue  text-[11px]">{offer.ram}</span>}
+          {compact && <span className="badge badge-green text-[11px]">{compact}</span>}
           {offer.screen_size && <span className="badge text-[11px]" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>{offer.screen_size}</span>}
         </div>
 
@@ -222,8 +355,8 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId }) {
         <div className="flex items-center gap-1 shrink-0 flex-wrap">
           <button className="btn-xs" onClick={() => setEditing(true)}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
             Edit
           </button>
@@ -232,8 +365,8 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId }) {
               <div className="spinner" style={{ width: '10px', height: '10px' }} />
             ) : (
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
               </svg>
             )}
             Del
@@ -251,7 +384,7 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId }) {
         <div className="mt-1 mb-1 px-4 py-3 rounded-lg text-[12px]"
           style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 mb-2">
-            {offer.screen_size  && <div><span className="text-[var(--text-muted)]">Screen: </span><span className="text-[var(--text-secondary)]">{offer.screen_size}</span></div>}
+            {offer.screen_size && <div><span className="text-[var(--text-muted)]">Screen: </span><span className="text-[var(--text-secondary)]">{offer.screen_size}</span></div>}
             {offer.graphics_card && <div><span className="text-[var(--text-muted)]">GPU: </span><span className="text-[var(--text-secondary)]">{offer.graphics_card}</span></div>}
           </div>
           {offer.comment && (
@@ -266,18 +399,40 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId }) {
 }
 
 /* ─── AddOfferForm ─────────────────────────────────────────── */
-function AddOfferForm({ onAdd, onCancel }) {
-  const [form,   setForm]   = useState(EMPTY_FORM)
+function AddOfferForm({ onAdd, onCancel, laptopModels, processors }) {
+  const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
-  const [error,  setError]  = useState('')
+  const [error, setError] = useState('')
+
+  // Knowledge base suggestions
+  const modelSuggestions = useMemo(() => {
+    if (!form.company) return []
+    return getModelSuggestionsFromDB(form.company, form.model, laptopModels)
+  }, [form.company, form.model, laptopModels])
+
+  const processorSuggestions = useMemo(() => {
+    if (!form.company || !form.model) return []
+    return getProcessorSuggestionsFromDB(form.company, form.model, laptopModels)
+  }, [form.company, form.model, laptopModels])
 
   function handleChange(e) { setForm(f => ({ ...f, [e.target.name]: e.target.value })); setError('') }
 
+  // Auto-fill GPU when processor is selected
+  function handleProcessorSelect(cpu) {
+    const specs = getProcessorSpecsFromDB(cpu, processors)
+    setForm(f => ({
+      ...f,
+      processor: cpu,
+      graphics_card: specs?.gpu || f.graphics_card,
+    }))
+    setError('')
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.vendor.trim())  { setError('Vendor required'); return }
+    if (!form.vendor.trim()) { setError('Vendor required'); return }
     if (!form.company.trim()) { setError('Company required'); return }
-    if (!form.model.trim())   { setError('Model required'); return }
+    if (!form.model.trim()) { setError('Model required'); return }
     setSaving(true)
     const err = await onAdd(form)
     setSaving(false)
@@ -285,6 +440,8 @@ function AddOfferForm({ onAdd, onCancel }) {
     setForm(EMPTY_FORM)
     onCancel()
   }
+
+  const inputStyle = { fontSize: '13px', padding: '8px 10px' }
 
   return (
     <div className="card p-5 mb-6 animate-fade-in" style={{ borderColor: 'rgba(59,130,246,0.35)' }}>
@@ -297,37 +454,49 @@ function AddOfferForm({ onAdd, onCancel }) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
           <div>
             <label className="form-label">Vendor *</label>
-            <input className="form-input" name="vendor"  value={form.vendor}  onChange={handleChange} placeholder="e.g. Tahir" style={{ fontSize: '13px', padding: '8px 10px' }} />
+            <input className="form-input" name="vendor" value={form.vendor} onChange={handleChange} placeholder="e.g. Tahir" style={inputStyle} />
           </div>
           <div>
             <label className="form-label">Company *</label>
-            <input className="form-input" name="company" value={form.company} onChange={handleChange} placeholder="e.g. Dell" list="oc-company-list" style={{ fontSize: '13px', padding: '8px 10px' }} />
+            <input className="form-input" name="company" value={form.company} onChange={handleChange} placeholder="e.g. Dell" list="oc-company-list" style={inputStyle} />
           </div>
-          <div>
-            <label className="form-label">Model *</label>
-            <input className="form-input" name="model"   value={form.model}   onChange={handleChange} placeholder="e.g. Latitude 7420" style={{ fontSize: '13px', padding: '8px 10px' }} />
-          </div>
+          <SmartInput
+            value={form.model}
+            onChange={v => { setForm(f => ({ ...f, model: v })); setError('') }}
+            onSelect={v => setForm(f => ({ ...f, model: v }))}
+            suggestions={modelSuggestions}
+            placeholder="e.g. Latitude 7420"
+            label="Model *"
+            style={inputStyle}
+          />
         </div>
         <div className="mb-3">
-          <label className="form-label">Processor</label>
-          <input className="form-input" name="processor" value={form.processor} onChange={handleChange} placeholder="e.g. i7-1185G7" style={{ fontSize: '13px', padding: '8px 10px' }} />
+          <SmartInput
+            value={form.processor}
+            onChange={v => { setForm(f => ({ ...f, processor: v })); setError('') }}
+            onSelect={handleProcessorSelect}
+            suggestions={processorSuggestions}
+            placeholder="e.g. i7-1185G7 (auto-fills GPU)"
+            label="Processor"
+            style={inputStyle}
+          />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
           <div>
             <label className="form-label">RAM</label>
-            <select className="form-input" name="ram" value={form.ram} onChange={handleChange} style={{ fontSize: '13px', padding: '8px 10px' }}>
+            <select className="form-input" name="ram" value={form.ram} onChange={handleChange} style={inputStyle}>
               <option value="">—</option>{RAM_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
             <label className="form-label">Storage</label>
-            <select className="form-input" name="storage" value={form.storage} onChange={handleChange} style={{ fontSize: '13px', padding: '8px 10px' }}>
+            <select className="form-input" name="storage" value={form.storage} onChange={handleChange} style={inputStyle}>
               <option value="">—</option>{STORAGE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div>
             <label className="form-label">Screen</label>
-            <select className="form-input" name="screen_size" value={form.screen_size} onChange={handleChange} style={{ fontSize: '13px', padding: '8px 10px' }}>
+            <select className="form-input" name="screen_size" value={form.screen_size} onChange={handleChange} style={inputStyle}>
               <option value="">—</option>{SCREEN_SIZE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
@@ -335,26 +504,35 @@ function AddOfferForm({ onAdd, onCancel }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
           <div>
             <label className="form-label">Condition</label>
-            <select className="form-input" name="condition" value={form.condition} onChange={handleChange} style={{ fontSize: '13px', padding: '8px 10px' }}>
+            <select className="form-input" name="condition" value={form.condition} onChange={handleChange} style={inputStyle}>
               <option value="">—</option>{CONDITION_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
             <label className="form-label">Price (PKR)</label>
-            <input className="form-input" name="cost_price" type="number" value={form.cost_price} onChange={handleChange} placeholder="e.g. 55000" min="0" step="500" style={{ fontSize: '13px', padding: '8px 10px' }} />
+            <input className="form-input" name="cost_price" type="number" value={form.cost_price} onChange={handleChange} placeholder="e.g. 55000" min="0" step="500" style={inputStyle} />
           </div>
           <div>
             <label className="form-label">GPU</label>
-            <input className="form-input" name="graphics_card" value={form.graphics_card} onChange={handleChange} placeholder="e.g. Intel Iris Xe" style={{ fontSize: '13px', padding: '8px 10px' }} />
+            <input className="form-input" name="graphics_card" value={form.graphics_card} onChange={handleChange} placeholder="e.g. Intel Iris Xe" style={inputStyle} />
           </div>
         </div>
-        <div className="mb-4">
+        <div className="mb-3">
           <label className="form-label">Comment</label>
-          <input className="form-input" name="comment" value={form.comment} onChange={handleChange} placeholder="Optional notes" style={{ fontSize: '13px', padding: '8px 10px' }} />
+          <input className="form-input" name="comment" value={form.comment} onChange={handleChange} placeholder="Optional notes" style={inputStyle} />
+        </div>
+        {/* Image URLs - synced to Laptops catalog (optional, 0-3 URLs) */}
+        <div className="mb-4 p-3 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+          <div className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-2">Image URLs (synced to Laptops catalog, optional)</div>
+          <div className="grid grid-cols-1 gap-2">
+            <input className="form-input" name="image_url_1" value={form.image_url_1} onChange={handleChange} placeholder="Image URL 1 (optional)" style={inputStyle} />
+            <input className="form-input" name="image_url_2" value={form.image_url_2} onChange={handleChange} placeholder="Image URL 2 (optional)" style={inputStyle} />
+            <input className="form-input" name="image_url_3" value={form.image_url_3} onChange={handleChange} placeholder="Image URL 3 (optional)" style={inputStyle} />
+          </div>
         </div>
         <div className="flex gap-2">
           <button type="submit" className="btn-primary" disabled={saving} style={{ minWidth: '120px', justifyContent: 'center' }}>
-            {saving ? <div className="spinner" /> : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Add Offer</>}
+            {saving ? <div className="spinner" /> : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> Add Offer</>}
           </button>
           <button type="button" className="btn-secondary" onClick={onCancel}>Cancel</button>
         </div>
@@ -365,15 +543,16 @@ function AddOfferForm({ onAdd, onCancel }) {
 
 /* ─── Main OffersClient component ──────────────────────────── */
 export default function OffersClient({ user, initialOffers }) {
-  const [offers,         setOffers]         = useState(initialOffers || [])
-  const [search,         setSearch]         = useState('')
-  const [vendorFilter,   setVendorFilter]   = useState('')
-  const [companyFilter,  setCompanyFilter]  = useState('')
-  const [showAddForm,    setShowAddForm]    = useState(false)
-  const [savingId,       setSavingId]       = useState(null)
-  const [deletingId,     setDeletingId]     = useState(null)
+  const [offers, setOffers] = useState(initialOffers || [])
+  const [search, setSearch] = useState('')
+  const [vendorFilter, setVendorFilter] = useState('')
+  const [companyFilter, setCompanyFilter] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [savingId, setSavingId] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
 
   const supabase = createClient()
+  const { laptopModels, processors } = useApp()
 
   useEffect(() => {
     const channel = supabase
@@ -381,12 +560,109 @@ export default function OffersClient({ user, initialOffers }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'vendor_offers' }, fetchOffers)
       .subscribe()
     return () => supabase.removeChannel(channel)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function fetchOffers() {
     const { data } = await supabase.from('vendor_offers').select('*').order('created_at', { ascending: false })
     if (data) setOffers(data)
+  }
+
+  /**
+   * Sync offer data to the laptops table for public catalog.
+   * Maps vendor_offers fields to laptops schema and upserts by offer_id.
+   * Returns error message if sync fails, null on success.
+   */
+  async function syncToLaptopsTable(offerId, form, processors) {
+    // Build images array from URLs (filter empty)
+    const images = [form.image_url_1, form.image_url_2, form.image_url_3]
+      .map(url => (url || '').trim())
+      .filter(Boolean)
+
+    // Get processor specs for auto-fill
+    const cpuKey = extractCPUKey(form.processor)
+    const cpuSpecs = cpuKey ? getProcessorSpecsFromDB(cpuKey, processors) : null
+
+    // Build specs JSONB from knowledge base
+    const specs = cpuSpecs ? {
+      cpu_gen: cpuSpecs.gen,
+      cpu_arch: cpuSpecs.arch,
+      cpu_cores: cpuSpecs.cores,
+      cpu_threads: cpuSpecs.threads,
+      cpu_base_ghz: cpuSpecs.baseGHz,
+      cpu_boost_ghz: cpuSpecs.boostGHz,
+      cpu_cache_mb: cpuSpecs.cacheMB,
+      cpu_tdp_w: cpuSpecs.tdpW,
+    } : {}
+
+    // Build highlights array (auto-generate based on specs)
+    const highlights = []
+    if (form.processor) highlights.push(form.processor)
+    if (form.ram) highlights.push(form.ram + ' RAM')
+    if (form.storage) highlights.push(form.storage)
+    if (form.condition === 'New') highlights.push('Brand New')
+    if (form.screen_size) highlights.push(form.screen_size + ' Display')
+
+    const laptopPayload = {
+      offer_id: offerId,
+      brand: form.company.trim(),
+      model: form.model.trim(),
+      cpu: form.processor.trim() || 'N/A',
+      ram: form.ram || 'N/A',
+      storage: form.storage || 'N/A',
+      gpu: form.graphics_card?.trim() || cpuSpecs?.gpu || 'Integrated',
+      screen: form.screen_size || 'N/A',
+      condition: form.condition || 'New',
+      price: form.cost_price ? Number(form.cost_price) : 0,
+      qty: 1,
+      images: images,
+      highlights: highlights,
+      specs: specs,
+      updated_at: new Date().toISOString(),
+    }
+
+    // Check if laptop already exists for this offer
+    const { data: existing, error: fetchError } = await supabase
+      .from('laptops')
+      .select('id')
+      .eq('offer_id', offerId)
+      .maybeSingle()
+
+    if (fetchError) {
+      // If offer_id column doesn't exist, insert without linking
+      console.warn('Laptops offer_id lookup failed, inserting without link:', fetchError.message)
+      const { offer_id, ...payloadWithoutOfferId } = laptopPayload
+      const { error: insertErr } = await supabase
+        .from('laptops')
+        .insert([{ ...payloadWithoutOfferId, created_at: new Date().toISOString() }])
+      if (insertErr) {
+        console.error('Error inserting laptop:', insertErr.message)
+        return insertErr.message
+      }
+      return null
+    }
+
+    if (existing) {
+      // Update existing laptop
+      const { error } = await supabase
+        .from('laptops')
+        .update(laptopPayload)
+        .eq('id', existing.id)
+      if (error) {
+        console.error('Error updating laptop:', error.message)
+        return error.message
+      }
+    } else {
+      // Insert new laptop
+      const { error } = await supabase
+        .from('laptops')
+        .insert([{ ...laptopPayload, created_at: new Date().toISOString() }])
+      if (error) {
+        console.error('Error inserting laptop:', error.message)
+        return error.message
+      }
+    }
+    return null
   }
 
   async function handleAdd(form) {
@@ -396,6 +672,11 @@ export default function OffersClient({ user, initialOffers }) {
       .insert([{ ...payload, created_at: new Date().toISOString() }])
       .select().single()
     if (error) return error.message
+
+    // Sync to laptops table (errors logged but don't block offer creation)
+    const laptopErr = await syncToLaptopsTable(inserted.id, form, processors)
+    if (laptopErr) console.warn('Laptop sync warning:', laptopErr)
+
     setOffers(prev => [inserted, ...prev])
     return null
   }
@@ -406,6 +687,11 @@ export default function OffersClient({ user, initialOffers }) {
     const { error } = await supabase.from('vendor_offers').update(payload).eq('id', id)
     setSavingId(null)
     if (error) return error.message
+
+    // Sync to laptops table (errors logged but don't block offer update)
+    const laptopErr = await syncToLaptopsTable(id, form, processors)
+    if (laptopErr) console.warn('Laptop sync warning:', laptopErr)
+
     setOffers(prev => prev.map(o => o.id === id ? { ...o, ...payload } : o))
     return null
   }
@@ -414,13 +700,21 @@ export default function OffersClient({ user, initialOffers }) {
     if (!confirm('Delete this offer?')) return
     const offer = offers.find(o => o.id === id)
     setDeletingId(id)
+
+    // Also delete the linked laptop (ignore errors if offer_id column doesn't exist)
+    try {
+      await supabase.from('laptops').delete().eq('offer_id', id)
+    } catch (e) {
+      console.warn('Could not delete linked laptop:', e)
+    }
+
     const error = await deleteWithLog(supabase, {
-      table:      'vendor_offers',
+      table: 'vendor_offers',
       id,
       entityType: 'offer',
-      modelName:  offer ? `${offer.vendor} — ${offer.company} ${offer.model}` : id,
-      price:      offer?.cost_price,
-      deletedBy:  user?.email || 'unknown',
+      modelName: offer ? `${offer.vendor} — ${offer.company} ${offer.model}` : id,
+      price: offer?.cost_price,
+      deletedBy: user?.email || 'unknown',
       entityData: offer,
     })
     setDeletingId(null)
@@ -428,43 +722,44 @@ export default function OffersClient({ user, initialOffers }) {
   }
 
   function buildPayload(form) {
+    // Note: image URLs are NOT stored in vendor_offers - they go directly to laptops table
     return {
-      vendor:        form.vendor.trim(),
-      company:       form.company.trim(),
-      model:         form.model.trim(),
-      processor:     form.processor.trim()     || null,
-      screen_size:   form.screen_size           || null,
-      ram:           form.ram                   || null,
-      storage:       form.storage               || null,
+      vendor: form.vendor.trim(),
+      company: form.company.trim(),
+      model: form.model.trim(),
+      processor: form.processor.trim() || null,
+      screen_size: form.screen_size || null,
+      ram: form.ram || null,
+      storage: form.storage || null,
       graphics_card: form.graphics_card.trim() || null,
-      condition:     form.condition             || null,
-      cost_price:    form.cost_price ? Number(form.cost_price) : null,
-      comment:       form.comment.trim()        || null,
-      updated_at:    new Date().toISOString(),
+      condition: form.condition || null,
+      cost_price: form.cost_price ? Number(form.cost_price) : null,
+      comment: form.comment.trim() || null,
+      updated_at: new Date().toISOString(),
     }
   }
 
   // Unique vendors + companies for filters
-  const vendors   = useMemo(() => Array.from(new Set(offers.map(o => o.vendor).filter(Boolean))).sort(),  [offers])
+  const vendors = useMemo(() => Array.from(new Set(offers.map(o => o.vendor).filter(Boolean))).sort(), [offers])
   const companies = useMemo(() => Array.from(new Set(offers.map(o => o.company).filter(Boolean))).sort(), [offers])
 
   // Filtered
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     return offers.filter(o => {
-      if (vendorFilter  && o.vendor  !== vendorFilter)  return false
+      if (vendorFilter && o.vendor !== vendorFilter) return false
       if (companyFilter && o.company !== companyFilter) return false
       if (!q) return true
       return (
-        (o.company       || '').toLowerCase().includes(q) ||
-        (o.model         || '').toLowerCase().includes(q) ||
-        (o.processor     || '').toLowerCase().includes(q) ||
-        (o.ram           || '').toLowerCase().includes(q) ||
-        (o.storage       || '').toLowerCase().includes(q) ||
+        (o.company || '').toLowerCase().includes(q) ||
+        (o.model || '').toLowerCase().includes(q) ||
+        (o.processor || '').toLowerCase().includes(q) ||
+        (o.ram || '').toLowerCase().includes(q) ||
+        (o.storage || '').toLowerCase().includes(q) ||
         (o.graphics_card || '').toLowerCase().includes(q) ||
-        (o.condition     || '').toLowerCase().includes(q) ||
-        (o.comment       || '').toLowerCase().includes(q) ||
-        (o.vendor        || '').toLowerCase().includes(q)
+        (o.condition || '').toLowerCase().includes(q) ||
+        (o.comment || '').toLowerCase().includes(q) ||
+        (o.vendor || '').toLowerCase().includes(q)
       )
     })
   }, [offers, search, vendorFilter, companyFilter])
@@ -487,7 +782,7 @@ export default function OffersClient({ user, initialOffers }) {
         {COMPANY_SUGGESTIONS.map(c => <option key={c} value={c} />)}
       </datalist>
 
-      {showAddForm && <AddOfferForm onAdd={handleAdd} onCancel={() => setShowAddForm(false)} />}
+      {showAddForm && <AddOfferForm onAdd={handleAdd} onCancel={() => setShowAddForm(false)} laptopModels={laptopModels} processors={processors} />}
 
       {/* ── Header + Filters ──────────────────────────────── */}
       <div className="flex items-center gap-2.5 flex-wrap mb-5">
@@ -514,7 +809,7 @@ export default function OffersClient({ user, initialOffers }) {
         <div className="flex-1 min-w-[180px] max-w-[320px] relative">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
             className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input type="text" className="form-input" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search model, spec…"
@@ -523,7 +818,7 @@ export default function OffersClient({ user, initialOffers }) {
 
         <button onClick={() => setShowAddForm(s => !s)} className="btn-primary whitespace-nowrap ml-auto">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           Add Offer
         </button>
@@ -533,7 +828,7 @@ export default function OffersClient({ user, initialOffers }) {
       {grouped.size === 0 ? (
         <div className="text-center py-16">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3">
-            <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
           </svg>
           <p className="text-[var(--text-muted)] text-[14px] m-0">
             {search || vendorFilter || companyFilter ? 'No offers match your filters.' : 'No vendor offers yet.'}
@@ -561,6 +856,8 @@ export default function OffersClient({ user, initialOffers }) {
                   onDelete={handleDelete}
                   savingId={savingId}
                   deletingId={deletingId}
+                  laptopModels={laptopModels}
+                  processors={processors}
                 />
               ))}
             </div>

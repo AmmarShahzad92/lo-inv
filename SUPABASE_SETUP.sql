@@ -1133,6 +1133,7 @@ CREATE POLICY "Allow all operations on users" ON users
 
 CREATE TABLE IF NOT EXISTS laptops (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  offer_id UUID REFERENCES public.vendor_offers(id) ON DELETE SET NULL,
   brand TEXT NOT NULL,
   model TEXT NOT NULL,
   cpu TEXT NOT NULL,
@@ -1152,6 +1153,7 @@ CREATE TABLE IF NOT EXISTS laptops (
 
 CREATE INDEX IF NOT EXISTS idx_laptops_brand ON laptops(brand);
 CREATE INDEX IF NOT EXISTS idx_laptops_price ON laptops(price);
+CREATE INDEX IF NOT EXISTS idx_laptops_offer_id ON laptops(offer_id);
 
 CREATE TRIGGER laptops_updated_at
   BEFORE UPDATE ON laptops
@@ -1166,3 +1168,12 @@ CREATE POLICY "Public read access on laptops" ON laptops
 
 CREATE POLICY "Allow all write on laptops" ON laptops
   FOR ALL USING (true) WITH CHECK (true);
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- MIGRATION: Offer → Laptop Auto-Sync (run this on existing databases)
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- Add offer_id column to laptops for linking (if not exists)
+ALTER TABLE laptops ADD COLUMN IF NOT EXISTS offer_id UUID REFERENCES public.vendor_offers(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_laptops_offer_id ON laptops(offer_id);
