@@ -1,0 +1,8 @@
+Status,Updated SP,Sales Price,Cost Price,Qty,Model Name,Processor,RAM,Type - Slots,SSD,Add HDD,GPU,Display Size,Battery Capacity/Health,Charger,Features,Comments
+Available,,70900,60000,1,Thinkpad X1 carbon,i5-8250U @1.60GHz,8-DDR4,Fix,512-M2SATA,N/A,UHD620-Shared,"14"" FHD-2k",57Wh-5000mAh-60%,C-Type,BL-FP,
+Available,,51900,41000,1,Thinkpad T480,i5-8350U @1.70GHz,8-DDR4,Ext-1/2,256-NVME,Add HDD Slot,UHD620-Shared,"14"" UHD-2k",96Wh-8400mAh-72%-Dual,C-Type,FP,
+Available,,31600,25000,1,Thinkpad T450,i5-5200U @2.20GHz,4-DDR4,Ext-1/2,180-SATA,Add HDD Slot,UHD-Shared,"14"" UHD",100Wh-8250mAh-80%-Dual,USB Pin,,
+,,,50000,1,IdeaPad V14,i7-1065G7,4+4,1(Fix)+1(Ext),256-nvme m2,N/A,Iris Xe Graphics,"14"" FHD",45Wh-31000mAh-82%,Small Pin,BL,old model
+,,,48000,1,Thinkpad X1 carbon,i7-7500U,16-1867,Fix,256,N/A,UHD620-Shared,"14"" UHD",33%,C-Type,FP-BL,ram slow - battery down
+,,,55000,1,Thinkpad L13 Yoga x360 with stylus,i5-1145g7,16-3200,fix,256,N/A,Iris Xe Graphics,"14"" UHD-2k",90%,C-Type,BL,
+,,,50000,1,Thinkpad L13 Yoga x360 with stylus,i5-1045g7,16-3200,fix,256,N/A,Iris Xe Graphics,"14"" UHD-2k",N/A,C-Type,BL,

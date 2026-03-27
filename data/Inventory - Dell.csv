@@ -1,0 +1,14 @@
+Status,Updated SP,Sales Price,Cost Price,Qty,Model Name,Processor,RAM,Type - Slots,SSD,Add HDD,GPU,Display Size,Battery Capacity/Health,Charger,Features,Comments
+Available,72000,81000,58000,1,Lattitude 7310,i7-10610U @1.80GHz,16,Fix,256-NVME M2,N/A,UHD620-Shared,"13.3"" UHD-2k",52Wh-6500mAh-70%,C-Type,FL-BL-Touch,
+Available,45000,52500,43000,1,Lattitude 7400,i5-8365U @1.60GHz,16,Ext-1/2,256-NVME M2,N/A,UHD620-Shared,"14"" UHD-2k",60Wh-5200mAh-71%,Round Pin,FL-BL-Touch,
+Available,48000,54500,40000,1,Lattitude 7300,i5-8265U @1.60GHz,16,Ext-1/2,256-NVME M2,N/A,UHD620-Shared,"13.3"" UHD-2k",60Wh-5200mAh-92%,Round Pin,FL,
+Available,38500,43500,35000,1,Lattitude 5570,i5-6200U @2.30GHz,8,Ext-2/2,256-NVME M2,N/A,HD-Shared,"15.6"" UHD",84Wh-7300mAh-90%,Round Pin,,
+,,,60000,1,Latitude 5520,i7-1185G7,8,Ext-1/2,256-NVME M2,N/A,Iris Xe Graphics,"14"" UHD",N/A,C-Type,BL,
+,,,50000,1,Latitude 7320,i5-1135G7,8-3733,Fix,256-(512->55k),N/A,Iris Xe Graphics,"13.3"" UHD",55%,C-Type,FP-BL,battery down
+,,47,55000,1,Latitude 7400 x360,i7-8665U @1.90ghz,16-2133,Fix,256 SKHynix,N/A,UHD620-Shared,"14"" 2k Bezelless",77%,C-Type,BL-full metal,minor scratches
+,,47,52000,1,Inspiron P83g,i7-8550U @1.80ghz,16-2400,fix,256 SKHynix,N/A,UHD620-Shared,"15"" 2k Bezelless",100%,C-Type,FL-BL-full metal,big bottom bezel
+,,,52000,1,Latitude 7410,i7-10610U @1.80GHz,8-2667,fix,256-OG Intel,N/A,UHD620-Shared,"14""-2k",90Wh-70%,C-Type,,no backlit
+,,,52000,1,Latitude 7410,i5-10310U @1.70ghz,8-2667,fix,256-NVME M2,N/A,UHD620-Shared,"14""-2k",44%,C-Type,,
+,,,52000,1,Latitude 7420,i5-1135G7 @2.60ghz,8-3733,fix,256-nvme,N/A,Iris Xe Graphics,"14"" UHD",45Wh-52%,C-Type,FP-BL,card slot broken
+,,,75000,1,Latitude 7420,i7-1185g7 @3.00ghz,16-3733,fix,512-(256->70k),N/A,Iris Xe Graphics,"14"" UHD",65Wh-70%,C-Type,BL,
+,,,70000,1,Latitude 5330,i7-1265U @3.20ghz-10c-12p,16-3200,Ext-1/2,256-nvme,N/A,UHD620-Shared,"14"" UHD",87%,C-Type,BL,back scratches too much

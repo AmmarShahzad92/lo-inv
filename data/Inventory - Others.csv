@@ -1,0 +1,5 @@
+Status,Sales Price,Cost Price,Qty,Brand Name,Model Name,Processor,RAM,Type - Slots,SSD,Add HDD,GPU,Display Size,Battery Capacity/Health,Charger,Features,Comments
+Sold,,32000,1,Toshiba,Portgege X20W-E,i7-8650U @1.90GHz,16-DDR4,Fix,256-NVME,,UHD620-Shared,"12.5"" FHD",44Wh-3800mAh-77%,C-Type,Fl-FP-BL,
+Available,,12800,1,Acer,Pentium Travel Mate B117,Pentium,4-DDR3,Fix,128-M2NVME,,HD-Shared,"11.5"" FHD",48Wh-3100mAh-80%,Acer Pin,,
+Available,35000,35000,1,Asus,Pro P550CA,i7-3537U @2.50GHz,4+4-DDR3,Ext - 1/1,128-SATA,300-HDD,HD4000-Shared,"17"" HD",65Wh-4400mAh-80%,Asus Pin,,Caddy cover loose
+Sold,11000,11000,1,Fujitsu,Lifebook AH531,i3-2330U @2.20GHz,8GB DDR3,Ext - 2/2,300-HDD,Caddy,HD-Shared,"15.6""",52Wh-5200mAh-60%,Fujitsu Pin,,
