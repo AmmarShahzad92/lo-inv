@@ -1177,3 +1177,137 @@ CREATE POLICY "Allow all write on laptops" ON laptops
 -- Add offer_id column to laptops for linking (if not exists)
 ALTER TABLE laptops ADD COLUMN IF NOT EXISTS offer_id UUID REFERENCES public.vendor_offers(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_laptops_offer_id ON laptops(offer_id);
+
+
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- LAPTOPS TABLE - Seed Data with Real Unsplash Images (FREE & WORKING)
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ── Dell (13 distinct laptop images) ───────────────────────────────────
+INSERT INTO public.laptops
+  (brand, model, cpu, ram, storage, gpu, screen, condition, price, qty, images, highlights, specs)
+VALUES
+  ('Dell','Latitude 7310','i7-10610U','16GB','256GB SSD','Intel UHD 620','13.3"','Good',58000,1,
+   ARRAY['https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80'],
+   '{"i7-10610U","16GB RAM","256GB SSD","13.3\" Display"}','{}'),
+  ('Dell','Latitude 7400','i5-8365U','16GB','256GB SSD','Intel UHD 620','14"','Good',43000,1,
+   ARRAY['https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=800&q=80'],
+   '{"i5-8365U","16GB RAM","256GB SSD","Backlit","Touch"}','{}'),
+  ('Dell','Latitude 7300','i5-8265U','16GB','256GB SSD','Intel UHD 620','13.3"','Good',40000,1,
+   ARRAY['https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80'],
+   '{"i5-8265U","16GB RAM","256GB SSD"}','{}'),
+  ('Dell','Latitude 5570','i5-6200U','8GB','256GB SSD','Intel HD','15.6"','Good',35000,1,
+   ARRAY['https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&q=80'],
+   '{"i5-6200U","8GB RAM","256GB SSD","15.6\" Display"}','{}'),
+  ('Dell','Latitude 5520','i7-1185G7','8GB','256GB SSD','Intel Iris Xe','14"','Good',60000,1,
+   ARRAY['https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=800&q=80'],
+   '{"i7-1185G7","8GB RAM","256GB SSD","Backlit"}','{}'),
+  ('Dell','Latitude 7320','i5-1135G7','8GB','256GB SSD','Intel Iris Xe','13.3"','Fair',50000,1,
+   ARRAY['https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&q=80'],
+   '{"i5-1135G7","8GB RAM","256GB SSD","Backlit"}','{}'),
+  ('Dell','Latitude 7400 x360','i7-8665U','16GB','256GB SSD','Intel UHD 620','14"','Good',55000,1,
+   ARRAY['https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80'],
+   '{"i7-8665U","16GB RAM","256GB SSD","2-in-1","Backlit"}','{}'),
+  ('Dell','Inspiron 15 3000','i7-8550U','16GB','256GB SSD','Intel UHD 620','15.6"','Good',52000,1,
+   ARRAY['https://images.unsplash.com/photo-1602080858428-57174f9431cf?w=800&q=80'],
+   '{"i7-8550U","16GB RAM","256GB SSD","15.6\" Display"}','{}'),
+  ('Dell','Latitude 7410','i7-10610U','8GB','256GB SSD','Intel UHD 620','14"','Good',52000,1,
+   ARRAY['https://images.unsplash.com/photo-1484788984921-03950022c9ef?w=800&q=80'],
+   '{"i7-10610U","8GB RAM","256GB SSD","14\" Display"}','{}'),
+  ('Dell','Latitude 7410','i5-10310U','8GB','256GB SSD','Intel UHD 620','14"','Good',52000,1,
+   ARRAY['https://images.unsplash.com/photo-1587614382346-4ec70e388b28?w=800&q=80'],
+   '{"i5-10310U","8GB RAM","256GB SSD","14\" Display"}','{}'),
+  ('Dell','Latitude 7420','i5-1135G7','8GB','256GB SSD','Intel Iris Xe','14"','Fair',52000,1,
+   ARRAY['https://images.unsplash.com/photo-1629131726692-1accd0c53ce0?w=800&q=80'],
+   '{"i5-1135G7","8GB RAM","256GB SSD","Backlit"}','{}'),
+  ('Dell','Latitude 7420','i7-1185G7','16GB','512GB SSD','Intel Iris Xe','14"','Excellent',75000,1,
+   ARRAY['https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80'],
+   '{"i7-1185G7","16GB RAM","512GB SSD","Backlit"}','{}'),
+  ('Dell','Latitude 5330','i7-1265U','16GB','256GB SSD','Intel UHD','14"','Good',70000,1,
+   ARRAY['https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&q=80'],
+   '{"i7-1265U","16GB RAM","256GB SSD","Backlit"}','{}');
+
+-- ── HP (9 distinct laptop images) ───────────────────────────────────
+INSERT INTO public.laptops
+  (brand, model, cpu, ram, storage, gpu, screen, condition, price, qty, images, highlights, specs)
+VALUES
+  ('HP','ProBook 440 G8','i5-1135G7','8GB','256GB SSD','Intel Iris Xe','14"','Fair',55000,1,
+   ARRAY['https://images.unsplash.com/photo-1544731612-de7f96afe55f?w=800&q=80'],
+   '{"i5-1135G7","8GB RAM","256GB SSD","Backlit"}','{}'),
+  ('HP','HP 250 G7','i5-1035G1','8GB','256GB SSD','Intel UHD 620','15.6"','Good',60000,1,
+   ARRAY['https://images.unsplash.com/photo-1589561084283-930aa7b1ce50?w=800&q=80'],
+   '{"i5-1035G1","8GB RAM","256GB SSD","15.6\" Display"}','{}'),
+  ('HP','EliteBook 1040 G4','i7-7500U','8GB','256GB SSD','Intel UHD 620','14"','Fair',60000,1,
+   ARRAY['https://images.unsplash.com/photo-1618424181497-157f25b6ddd5?w=800&q=80'],
+   '{"i7-7500U","8GB RAM","256GB SSD","Backlit"}','{}'),
+  ('HP','EliteBook 1030 G4 x360','i5-8265U','8GB','256GB SSD','Intel UHD 620','13.3"','Fair',62000,1,
+   ARRAY['https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80'],
+   '{"i5-8265U","8GB RAM","256GB SSD","2-in-1"}','{}'),
+  ('HP','EliteBook 840 G5','i5-8250U','8GB','256GB SSD','Intel UHD 620','14"','Good',54000,1,
+   ARRAY['https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=800&q=80'],
+   '{"i5-8250U","8GB RAM","256GB SSD","Backlit"}','{}'),
+  ('HP','Spectre x360','i5-6200U','8GB','256GB SSD','Intel HD 520','13.3"','Good',40000,1,
+   ARRAY['https://images.unsplash.com/photo-1504707748692-419802cf939d?w=800&q=80'],
+   '{"i5-6200U","8GB RAM","256GB SSD","2-in-1"}','{}'),
+  ('HP','HP 250 G4','i5-6200U','8GB','256GB SSD','Intel HD 520','15.6"','Fair',25000,1,
+   ARRAY['https://images.unsplash.com/photo-1516387938699-a93567ec168e?w=800&q=80'],
+   '{"i5-6200U","8GB RAM","256GB SSD","15.6\" Display"}','{}'),
+  ('HP','EliteBook 850 G7','i7-10710U','8GB','256GB SSD','NVIDIA MX250 2GB','15.6"','Good',82000,1,
+   ARRAY['https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80'],
+   '{"i7-10710U","8GB RAM","NVIDIA MX250","15.6\" Display"}','{}'),
+  ('HP','EliteBook 1040 G8','i7-1185G7','32GB','512GB SSD','Intel Iris Xe','14"','Excellent',120000,1,
+   ARRAY['https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&q=80'],
+   '{"i7-1185G7","32GB RAM","512GB SSD","Privacy Screen"}','{}');
+
+-- ── Lenovo (7 distinct laptop images) ───────────────────────────────
+INSERT INTO public.laptops
+  (brand, model, cpu, ram, storage, gpu, screen, condition, price, qty, images, highlights, specs)
+VALUES
+  ('Lenovo','ThinkPad X1 Carbon','i5-8250U','8GB','512GB SSD','Intel UHD 620','14"','Good',60000,1,
+   ARRAY['https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=800&q=80'],
+   '{"i5-8250U","8GB RAM","512GB SSD","Backlit"}','{}'),
+  ('Lenovo','ThinkPad T480','i5-8350U','8GB','256GB SSD','Intel UHD 620','14"','Good',41000,1,
+   ARRAY['https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=800&q=80'],
+   '{"i5-8350U","8GB RAM","256GB SSD","HDD Slot"}','{}'),
+  ('Lenovo','ThinkPad T450','i5-5200U','4GB','128GB SSD','Intel HD 5500','14"','Fair',25000,1,
+   ARRAY['https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80'],
+   '{"i5-5200U","4GB RAM","128GB SSD"}','{}'),
+  ('Lenovo','IdeaPad V14','i7-1065G7','8GB','256GB SSD','Intel Iris Plus','14"','Good',50000,1,
+   ARRAY['https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80'],
+   '{"i7-1065G7","8GB RAM","256GB SSD","Backlit"}','{}'),
+  ('Lenovo','ThinkPad X1 Carbon','i7-7500U','16GB','256GB SSD','Intel UHD 620','14"','Fair',48000,1,
+   ARRAY['https://images.unsplash.com/photo-1484788984921-03950022c9ef?w=800&q=80'],
+   '{"i7-7500U","16GB RAM","256GB SSD","Backlit"}','{}'),
+  ('Lenovo','ThinkPad L13 Yoga','i5-1145G7','16GB','256GB SSD','Intel Iris Xe','14"','Excellent',55000,1,
+   ARRAY['https://images.unsplash.com/photo-1602080858428-57174f9431cf?w=800&q=80'],
+   '{"i5-1145G7","16GB RAM","2-in-1","Stylus","Backlit"}','{}'),
+  ('Lenovo','ThinkPad L13 Yoga','i5-1045G7','16GB','256GB SSD','Intel Iris Plus','14"','Good',50000,1,
+   ARRAY['https://images.unsplash.com/photo-1587614382346-4ec70e388b28?w=800&q=80'],
+   '{"i5-1045G7","16GB RAM","2-in-1","Stylus","Backlit"}','{}');
+
+-- ── Apple (1 MacBook image) ────────────────────────────────────────
+INSERT INTO public.laptops
+  (brand, model, cpu, ram, storage, gpu, screen, condition, price, qty, images, highlights, specs)
+VALUES
+  ('Apple','MacBook Air (2019)','Intel Core i5','8GB','128GB SSD','Intel Iris Plus','13.3"','Good',75000,1,
+   ARRAY['https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80'],
+   '{"Intel Core i5","8GB RAM","128GB SSD","Retina Display"}','{}');
+
+-- ── Others (4 distinct images) ───────────────────────────────────────
+INSERT INTO public.laptops
+  (brand, model, cpu, ram, storage, gpu, screen, condition, price, qty, images, highlights, specs)
+VALUES
+  ('Toshiba','Portege X20W-E','i7-8650U','16GB','256GB SSD','Intel UHD 620','12.5"','Good',32000,1,
+   ARRAY['https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&q=80'],
+   '{"i7-8650U","16GB RAM","2-in-1","Backlit"}','{}'),
+  ('Acer','TravelMate B117','Intel Pentium','4GB','128GB SSD','Intel HD','11.6"','Good',12800,1,
+   ARRAY['https://images.unsplash.com/photo-1516387938699-a93567ec168e?w=800&q=80'],
+   '{"Intel Pentium","4GB RAM","Compact"}','{}'),
+  ('Asus','Pro P550CA','i7-3537U','8GB','128GB SSD','Intel HD 4000','17.3"','Fair',35000,1,
+   ARRAY['https://images.unsplash.com/photo-1629131726692-1accd0c53ce0?w=800&q=80'],
+   '{"i7-3537U","8GB RAM","17.3\" Display"}','{}'),
+  ('Fujitsu','Lifebook AH531','i3-2330U','8GB','512GB HDD','Intel HD','15.6"','Fair',11000,1,
+   ARRAY['https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&q=80'],
+   '{"i3-2330U","8GB RAM","512GB HDD"}','{}');
