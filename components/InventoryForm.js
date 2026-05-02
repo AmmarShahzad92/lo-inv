@@ -11,14 +11,16 @@ import {
   getProcessorSpecsFromDB,
 } from '@/lib/laptopKB'
 import { useApp } from '@/lib/AppContext'
+import CatalogImagesInput from '@/components/CatalogImagesInput'
+import { normalizeImages } from '@/lib/catalogImages'
 
 const CATEGORY_OPTIONS = [
-  { value: 'laptop',    label: 'Laptop' },
-  { value: 'ram',       label: 'RAM' },
-  { value: 'ssd',       label: 'SSD' },
-  { value: 'charger',   label: 'Charger' },
+  { value: 'laptop', label: 'Laptop' },
+  { value: 'ram', label: 'RAM' },
+  { value: 'ssd', label: 'SSD' },
+  { value: 'charger', label: 'Charger' },
   { value: 'accessory', label: 'Accessory' },
-  { value: 'other',     label: 'Other' },
+  { value: 'other', label: 'Other' },
 ]
 
 const RAM_OPTIONS = ['4GB', '8GB', '16GB', '32GB', '64GB']
@@ -133,6 +135,7 @@ function getInitialForm(item) {
     notes: item?.notes || '',
     purchase_id: item?.purchase_id || '',
     liability_amount: '',
+    images: normalizeImages(item?.images),
   }
 }
 
@@ -159,12 +162,12 @@ export default function InventoryForm({ user, partners, mode, item }) {
     return sourceForm.item_name?.trim() || 'Inventory item'
   }
 
-  const isLaptop    = form.category === 'laptop'
-  const isRam       = form.category === 'ram'
-  const isSsd       = form.category === 'ssd'
-  const isCharger   = form.category === 'charger'
+  const isLaptop = form.category === 'laptop'
+  const isRam = form.category === 'ram'
+  const isSsd = form.category === 'ssd'
+  const isCharger = form.category === 'charger'
   const isAccessory = form.category === 'accessory'
-  const isOther     = form.category === 'other'
+  const isOther = form.category === 'other'
 
   // Has SSD fields: laptop + ssd
   const showSsdFields = isLaptop || isSsd
@@ -180,7 +183,7 @@ export default function InventoryForm({ user, partners, mode, item }) {
     if (isLaptop) {
       setModelSuggestions(form.company ? getModelSuggestionsFromDB(form.company, '', laptopModels) : [])
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.company, form.category])
 
   // -- On edit load, resolve processor specs ----------------------------------
@@ -188,7 +191,7 @@ export default function InventoryForm({ user, partners, mode, item }) {
     if (isEdit && isLaptop && form.processor && !autoSpecs) {
       applyProcessorSpecs(form.processor)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function applyProcessorSpecs(cpuText) {
@@ -267,6 +270,7 @@ export default function InventoryForm({ user, partners, mode, item }) {
       min_sale_price: f.min_sale_price,
       notes: f.notes,
       purchase_id: f.purchase_id,
+      images: f.images,
     }))
     setAutoSpecs(null)
     setModelSuggestions([])
@@ -331,6 +335,7 @@ export default function InventoryForm({ user, partners, mode, item }) {
       notes: form.notes.trim() || null,
       specifications: Object.keys(cleanSpecs).length > 0 ? cleanSpecs : null,
       purchase_id: form.purchase_id || null,
+      images: normalizeImages(form.images),
     }
 
     // Category-specific fields
@@ -530,7 +535,7 @@ export default function InventoryForm({ user, partners, mode, item }) {
         onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+          <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
         </svg>
         Back to inventory
       </Link>
@@ -581,9 +586,9 @@ export default function InventoryForm({ user, partners, mode, item }) {
                 onChange={handleChange}
                 placeholder={
                   isRam ? 'e.g. Kingston Fury 16GB DDR4' :
-                  isSsd ? 'e.g. Samsung 970 EVO Plus 512GB' :
-                  isCharger ? 'e.g. Dell 65W USB-C Charger' :
-                  'e.g. Laptop bag, Mouse, Keyboard'
+                    isSsd ? 'e.g. Samsung 970 EVO Plus 512GB' :
+                      isCharger ? 'e.g. Dell 65W USB-C Charger' :
+                        'e.g. Laptop bag, Mouse, Keyboard'
                 }
               />
             </div>
@@ -862,6 +867,16 @@ export default function InventoryForm({ user, partners, mode, item }) {
             />
           </div>
 
+          <CatalogImagesInput
+            supabase={supabase}
+            brand={form.company}
+            model={form.model}
+            images={form.images}
+            onChange={(images) => setForm(f => ({ ...f, images }))}
+            label="Catalog Images"
+            hint="Optional images that can be reused when publishing to catalog."
+          />
+
           {/* ── Collapsible Technical Specifications (JSONB) ───────────────── */}
           <div style={{ marginBottom: '24px' }}>
             <button
@@ -878,7 +893,7 @@ export default function InventoryForm({ user, partners, mode, item }) {
               }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
               </svg>
               Technical Specifications
               {isLaptop && autoSpecs && (
@@ -958,7 +973,7 @@ export default function InventoryForm({ user, partners, mode, item }) {
               {loading ? <div className="spinner" /> : (
                 <>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
+                    <polyline points="20 6 9 17 4 12" />
                   </svg>
                   {isEdit ? 'Save Changes' : 'Add to Inventory'}
                 </>

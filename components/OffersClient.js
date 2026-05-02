@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import CatalogImagesInput from '@/components/CatalogImagesInput'
+import { normalizeImages } from '@/lib/catalogImages'
 import { deleteWithLog } from '@/lib/deleteWithLog'
 import { useApp } from '@/lib/AppContext'
 import {
@@ -28,7 +30,7 @@ const EMPTY_FORM = {
   vendor: 'Tahir', company: '', model: '', processor: '',
   screen_size: '', ram: '', storage: '', graphics_card: '',
   condition: '', cost_price: '', comment: '',
-  image_url_1: '', image_url_2: '', image_url_3: '',
+  images: [],
 }
 
 // -- SmartInput: dropdown with autocomplete suggestions -----------------------
@@ -122,7 +124,7 @@ const IS = { fontSize: '12px', width: '100%', padding: '5px 8px' }
 const SS = { ...IS, appearance: 'none' }
 
 /* ─── OfferCard: row on desktop, card on mobile, form when editing ─ */
-function OfferCard({ offer, onSave, onDelete, savingId, deletingId, laptopModels, processors }) {
+function OfferCard({ offer, onSave, onDelete, onPublish, savingId, deletingId, laptopModels, processors, supabase }) {
   const [editing, setEditing] = useState(false)
   const [open, setOpen] = useState(false)
   const [formError, setFormError] = useState('')
@@ -138,10 +140,7 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId, laptopModels
     condition: offer.condition || '',
     cost_price: offer.cost_price || '',
     comment: offer.comment || '',
-    // Image URLs are for laptops catalog - not stored in vendor_offers
-    image_url_1: '',
-    image_url_2: '',
-    image_url_3: '',
+    images: normalizeImages(offer.images),
   })
 
   // Knowledge base suggestions
@@ -182,10 +181,7 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId, laptopModels
       condition: offer.condition || '',
       cost_price: offer.cost_price || '',
       comment: offer.comment || '',
-      // Image URLs reset - they're for laptops, not stored in offers
-      image_url_1: '',
-      image_url_2: '',
-      image_url_3: '',
+      images: normalizeImages(offer.images),
     })
   }, [offer, editing])
 
@@ -205,9 +201,7 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId, laptopModels
       condition: offer.condition || '',
       cost_price: offer.cost_price || '',
       comment: offer.comment || '',
-      image_url_1: '',
-      image_url_2: '',
-      image_url_3: '',
+      images: normalizeImages(offer.images),
     })
   }
 
@@ -267,15 +261,15 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId, laptopModels
         <div className="mb-2">
           <FormField label="Comment"><input name="comment" value={form.comment} onChange={handleChange} className="form-input" style={IS} placeholder="Optional notes" /></FormField>
         </div>
-        {/* Image URLs - synced to Laptops catalog (optional, 0-3 URLs) */}
-        <div className="mb-3 p-2.5 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
-          <div className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-2">Image URLs (synced to Laptops catalog, optional)</div>
-          <div className="grid grid-cols-1 gap-2">
-            <input name="image_url_1" value={form.image_url_1} onChange={handleChange} className="form-input" style={IS} placeholder="Image URL 1 (optional)" />
-            <input name="image_url_2" value={form.image_url_2} onChange={handleChange} className="form-input" style={IS} placeholder="Image URL 2 (optional)" />
-            <input name="image_url_3" value={form.image_url_3} onChange={handleChange} className="form-input" style={IS} placeholder="Image URL 3 (optional)" />
-          </div>
-        </div>
+        <CatalogImagesInput
+          supabase={supabase}
+          brand={form.company}
+          model={form.model}
+          images={form.images}
+          onChange={(images) => setForm(f => ({ ...f, images }))}
+          label="Catalog Images"
+          hint="Stored on offer and reused when publishing to catalog."
+        />
         <div className="flex gap-1.5">
           <button onClick={handleSave} disabled={isSavingThis}
             className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg text-white text-[12px] font-medium cursor-pointer"
@@ -360,6 +354,13 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId, laptopModels
             </svg>
             Edit
           </button>
+          <button className="btn-xs btn-xs-green" onClick={() => onPublish(offer)}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14" />
+              <path d="M5 12l7-7 7 7" />
+            </svg>
+            Publish
+          </button>
           <button className="btn-xs btn-xs-red" onClick={() => onDelete(offer.id)} disabled={isDeletingThis}>
             {isDeletingThis ? (
               <div className="spinner" style={{ width: '10px', height: '10px' }} />
@@ -399,7 +400,7 @@ function OfferCard({ offer, onSave, onDelete, savingId, deletingId, laptopModels
 }
 
 /* ─── AddOfferForm ─────────────────────────────────────────── */
-function AddOfferForm({ onAdd, onCancel, laptopModels, processors }) {
+function AddOfferForm({ onAdd, onCancel, laptopModels, processors, supabase }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -521,15 +522,15 @@ function AddOfferForm({ onAdd, onCancel, laptopModels, processors }) {
           <label className="form-label">Comment</label>
           <input className="form-input" name="comment" value={form.comment} onChange={handleChange} placeholder="Optional notes" style={inputStyle} />
         </div>
-        {/* Image URLs - synced to Laptops catalog (optional, 0-3 URLs) */}
-        <div className="mb-4 p-3 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
-          <div className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-2">Image URLs (synced to Laptops catalog, optional)</div>
-          <div className="grid grid-cols-1 gap-2">
-            <input className="form-input" name="image_url_1" value={form.image_url_1} onChange={handleChange} placeholder="Image URL 1 (optional)" style={inputStyle} />
-            <input className="form-input" name="image_url_2" value={form.image_url_2} onChange={handleChange} placeholder="Image URL 2 (optional)" style={inputStyle} />
-            <input className="form-input" name="image_url_3" value={form.image_url_3} onChange={handleChange} placeholder="Image URL 3 (optional)" style={inputStyle} />
-          </div>
-        </div>
+        <CatalogImagesInput
+          supabase={supabase}
+          brand={form.company}
+          model={form.model}
+          images={form.images}
+          onChange={(images) => setForm(f => ({ ...f, images }))}
+          label="Catalog Images"
+          hint="Stored on offer and reused when publishing to catalog."
+        />
         <div className="flex gap-2">
           <button type="submit" className="btn-primary" disabled={saving} style={{ minWidth: '120px', justifyContent: 'center' }}>
             {saving ? <div className="spinner" /> : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> Add Offer</>}
@@ -550,6 +551,13 @@ export default function OffersClient({ user, initialOffers }) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [savingId, setSavingId] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [publishTarget, setPublishTarget] = useState(null)
+  const [publishPrice, setPublishPrice] = useState('')
+  const [publishQty, setPublishQty] = useState('1')
+  const [publishCondition, setPublishCondition] = useState('')
+  const [publishImages, setPublishImages] = useState([])
+  const [publishError, setPublishError] = useState('')
+  const [publishLoading, setPublishLoading] = useState(false)
 
   const supabase = createClient()
   const { laptopModels, processors } = useApp()
@@ -568,101 +576,18 @@ export default function OffersClient({ user, initialOffers }) {
     if (data) setOffers(data)
   }
 
-  /**
-   * Sync offer data to the laptops table for public catalog.
-   * Maps vendor_offers fields to laptops schema and upserts by offer_id.
-   * Returns error message if sync fails, null on success.
-   */
-  async function syncToLaptopsTable(offerId, form, processors) {
-    // Build images array from URLs (filter empty)
-    const images = [form.image_url_1, form.image_url_2, form.image_url_3]
-      .map(url => (url || '').trim())
-      .filter(Boolean)
+  function openPublish(offer) {
+    setPublishTarget(offer)
+    setPublishPrice(String(offer.cost_price || ''))
+    setPublishQty('1')
+    setPublishCondition(offer.condition || 'New')
+    setPublishImages(normalizeImages(offer.images))
+    setPublishError('')
+  }
 
-    // Get processor specs for auto-fill
-    const cpuKey = extractCPUKey(form.processor)
-    const cpuSpecs = cpuKey ? getProcessorSpecsFromDB(cpuKey, processors) : null
-
-    // Build specs JSONB from knowledge base
-    const specs = cpuSpecs ? {
-      cpu_gen: cpuSpecs.gen,
-      cpu_arch: cpuSpecs.arch,
-      cpu_cores: cpuSpecs.cores,
-      cpu_threads: cpuSpecs.threads,
-      cpu_base_ghz: cpuSpecs.baseGHz,
-      cpu_boost_ghz: cpuSpecs.boostGHz,
-      cpu_cache_mb: cpuSpecs.cacheMB,
-      cpu_tdp_w: cpuSpecs.tdpW,
-    } : {}
-
-    // Build highlights array (auto-generate based on specs)
-    const highlights = []
-    if (form.processor) highlights.push(form.processor)
-    if (form.ram) highlights.push(form.ram + ' RAM')
-    if (form.storage) highlights.push(form.storage)
-    if (form.condition === 'New') highlights.push('Brand New')
-    if (form.screen_size) highlights.push(form.screen_size + ' Display')
-
-    const laptopPayload = {
-      offer_id: offerId,
-      brand: form.company.trim(),
-      model: form.model.trim(),
-      cpu: form.processor.trim() || 'N/A',
-      ram: form.ram || 'N/A',
-      storage: form.storage || 'N/A',
-      gpu: form.graphics_card?.trim() || cpuSpecs?.gpu || 'Integrated',
-      screen: form.screen_size || 'N/A',
-      condition: form.condition || 'New',
-      price: form.cost_price ? Number(form.cost_price) : 0,
-      qty: 1,
-      images: images,
-      highlights: highlights,
-      specs: specs,
-      updated_at: new Date().toISOString(),
-    }
-
-    // Check if laptop already exists for this offer
-    const { data: existing, error: fetchError } = await supabase
-      .from('laptops')
-      .select('id')
-      .eq('offer_id', offerId)
-      .maybeSingle()
-
-    if (fetchError) {
-      // If offer_id column doesn't exist, insert without linking
-      console.warn('Laptops offer_id lookup failed, inserting without link:', fetchError.message)
-      const { offer_id, ...payloadWithoutOfferId } = laptopPayload
-      const { error: insertErr } = await supabase
-        .from('laptops')
-        .insert([{ ...payloadWithoutOfferId, created_at: new Date().toISOString() }])
-      if (insertErr) {
-        console.error('Error inserting laptop:', insertErr.message)
-        return insertErr.message
-      }
-      return null
-    }
-
-    if (existing) {
-      // Update existing laptop
-      const { error } = await supabase
-        .from('laptops')
-        .update(laptopPayload)
-        .eq('id', existing.id)
-      if (error) {
-        console.error('Error updating laptop:', error.message)
-        return error.message
-      }
-    } else {
-      // Insert new laptop
-      const { error } = await supabase
-        .from('laptops')
-        .insert([{ ...laptopPayload, created_at: new Date().toISOString() }])
-      if (error) {
-        console.error('Error inserting laptop:', error.message)
-        return error.message
-      }
-    }
-    return null
+  function closePublish() {
+    setPublishTarget(null)
+    setPublishError('')
   }
 
   async function handleAdd(form) {
@@ -672,10 +597,6 @@ export default function OffersClient({ user, initialOffers }) {
       .insert([{ ...payload, created_at: new Date().toISOString() }])
       .select().single()
     if (error) return error.message
-
-    // Sync to laptops table (errors logged but don't block offer creation)
-    const laptopErr = await syncToLaptopsTable(inserted.id, form, processors)
-    if (laptopErr) console.warn('Laptop sync warning:', laptopErr)
 
     setOffers(prev => [inserted, ...prev])
     return null
@@ -688,10 +609,6 @@ export default function OffersClient({ user, initialOffers }) {
     setSavingId(null)
     if (error) return error.message
 
-    // Sync to laptops table (errors logged but don't block offer update)
-    const laptopErr = await syncToLaptopsTable(id, form, processors)
-    if (laptopErr) console.warn('Laptop sync warning:', laptopErr)
-
     setOffers(prev => prev.map(o => o.id === id ? { ...o, ...payload } : o))
     return null
   }
@@ -700,13 +617,6 @@ export default function OffersClient({ user, initialOffers }) {
     if (!confirm('Delete this offer?')) return
     const offer = offers.find(o => o.id === id)
     setDeletingId(id)
-
-    // Also delete the linked laptop (ignore errors if offer_id column doesn't exist)
-    try {
-      await supabase.from('laptops').delete().eq('offer_id', id)
-    } catch (e) {
-      console.warn('Could not delete linked laptop:', e)
-    }
 
     const error = await deleteWithLog(supabase, {
       table: 'vendor_offers',
@@ -721,8 +631,122 @@ export default function OffersClient({ user, initialOffers }) {
     if (!error) setOffers(prev => prev.filter(o => o.id !== id))
   }
 
+  function buildLaptopPayloadFromOffer(offer, { images, price, qty, condition }) {
+    const cpuKey = extractCPUKey(offer.processor)
+    const cpuSpecs = cpuKey ? getProcessorSpecsFromDB(cpuKey, processors) : null
+
+    const specs = cpuSpecs ? {
+      cpu_gen: cpuSpecs.gen,
+      cpu_arch: cpuSpecs.arch,
+      cpu_cores: cpuSpecs.cores,
+      cpu_threads: cpuSpecs.threads,
+      cpu_base_ghz: cpuSpecs.baseGHz,
+      cpu_boost_ghz: cpuSpecs.boostGHz,
+      cpu_cache_mb: cpuSpecs.cacheMB,
+      cpu_tdp_w: cpuSpecs.tdpW,
+    } : {}
+
+    const highlights = []
+    if (offer.processor) highlights.push(offer.processor)
+    if (offer.ram) highlights.push(`${offer.ram} RAM`)
+    if (offer.storage) highlights.push(offer.storage)
+    if (condition) highlights.push(condition)
+    if (offer.screen_size) highlights.push(`${offer.screen_size} Display`)
+
+    return {
+      offer_id: offer.id,
+      brand: offer.company?.trim() || 'N/A',
+      model: offer.model?.trim() || 'N/A',
+      cpu: offer.processor?.trim() || 'N/A',
+      ram: offer.ram || 'N/A',
+      storage: offer.storage || 'N/A',
+      gpu: offer.graphics_card?.trim() || cpuSpecs?.gpu || 'Integrated',
+      screen: offer.screen_size || 'N/A',
+      condition: condition || 'New',
+      price,
+      qty,
+      images,
+      highlights,
+      specs,
+      updated_at: new Date().toISOString(),
+    }
+  }
+
+  async function handlePublish() {
+    if (!publishTarget) return
+    const images = normalizeImages(publishImages)
+    if (!publishTarget.company || !publishTarget.model) {
+      setPublishError('Company and model are required before publishing.')
+      return
+    }
+    if (!images.length) {
+      setPublishError('Add at least one image before publishing.')
+      return
+    }
+    const price = Number(publishPrice)
+    if (!Number.isFinite(price) || price <= 0) {
+      setPublishError('Enter a valid price.')
+      return
+    }
+    const qty = Math.max(0, Number(publishQty) || 0)
+
+    setPublishLoading(true)
+    setPublishError('')
+
+    const { error: offerUpdateErr } = await supabase
+      .from('vendor_offers')
+      .update({ images, updated_at: new Date().toISOString() })
+      .eq('id', publishTarget.id)
+
+    if (offerUpdateErr) {
+      setPublishError(offerUpdateErr.message)
+      setPublishLoading(false)
+      return
+    }
+
+    const payload = buildLaptopPayloadFromOffer(publishTarget, {
+      images,
+      price,
+      qty,
+      condition: publishCondition,
+    })
+
+    const { data: existing, error: lookupError } = await supabase
+      .from('laptops')
+      .select('id')
+      .eq('offer_id', publishTarget.id)
+      .maybeSingle()
+
+    if (lookupError) {
+      setPublishError(lookupError.message)
+      setPublishLoading(false)
+      return
+    }
+
+    if (existing) {
+      const { error } = await supabase.from('laptops').update(payload).eq('id', existing.id)
+      if (error) {
+        setPublishError(error.message)
+        setPublishLoading(false)
+        return
+      }
+    } else {
+      const { error } = await supabase
+        .from('laptops')
+        .insert([{ ...payload, created_at: new Date().toISOString() }])
+      if (error) {
+        setPublishError(error.message)
+        setPublishLoading(false)
+        return
+      }
+    }
+
+    setOffers(prev => prev.map(o => o.id === publishTarget.id ? { ...o, images } : o))
+    setPublishLoading(false)
+    closePublish()
+  }
+
   function buildPayload(form) {
-    // Note: image URLs are NOT stored in vendor_offers - they go directly to laptops table
     return {
       vendor: form.vendor.trim(),
       company: form.company.trim(),
@@ -735,6 +759,7 @@ export default function OffersClient({ user, initialOffers }) {
       condition: form.condition || null,
       cost_price: form.cost_price ? Number(form.cost_price) : null,
       comment: form.comment.trim() || null,
+      images: normalizeImages(form.images),
       updated_at: new Date().toISOString(),
     }
   }
@@ -782,7 +807,15 @@ export default function OffersClient({ user, initialOffers }) {
         {COMPANY_SUGGESTIONS.map(c => <option key={c} value={c} />)}
       </datalist>
 
-      {showAddForm && <AddOfferForm onAdd={handleAdd} onCancel={() => setShowAddForm(false)} laptopModels={laptopModels} processors={processors} />}
+      {showAddForm && (
+        <AddOfferForm
+          onAdd={handleAdd}
+          onCancel={() => setShowAddForm(false)}
+          laptopModels={laptopModels}
+          processors={processors}
+          supabase={supabase}
+        />
+      )}
 
       {/* ── Header + Filters ──────────────────────────────── */}
       <div className="flex items-center gap-2.5 flex-wrap mb-5">
@@ -854,15 +887,93 @@ export default function OffersClient({ user, initialOffers }) {
                   offer={offer}
                   onSave={handleSave}
                   onDelete={handleDelete}
+                  onPublish={openPublish}
                   savingId={savingId}
                   deletingId={deletingId}
                   laptopModels={laptopModels}
                   processors={processors}
+                  supabase={supabase}
                 />
               ))}
             </div>
           </div>
         ))
+      )}
+
+      {publishTarget && (
+        <div className="modal-overlay" onClick={closePublish}>
+          <div onClick={(e) => e.stopPropagation()} className="modal-card animate-fade-in">
+            <div className="flex justify-between items-start mb-5">
+              <div>
+                <h3 className="text-[16px] font-bold text-[var(--text-primary)] m-0 mb-1">Publish to Catalog</h3>
+                <p className="text-[13px] text-[var(--text-muted)] m-0">
+                  {publishTarget.company} {publishTarget.model}
+                </p>
+              </div>
+              <button onClick={closePublish} className="text-[18px] leading-none cursor-pointer"
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', padding: '2px' }}>
+                &#x2715;
+              </button>
+            </div>
+
+            {publishError && <div className="alert-error mb-4">{publishError}</div>}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="form-label">Price (PKR)</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  value={publishPrice}
+                  onChange={(e) => setPublishPrice(e.target.value)}
+                  min="0"
+                  step="500"
+                />
+              </div>
+              <div>
+                <label className="form-label">Quantity</label>
+                <input
+                  className="form-input"
+                  type="number"
+                  value={publishQty}
+                  onChange={(e) => setPublishQty(e.target.value)}
+                  min="0"
+                  step="1"
+                />
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="form-label">Condition</label>
+              <select
+                className="form-input"
+                value={publishCondition}
+                onChange={(e) => setPublishCondition(e.target.value)}
+              >
+                {CONDITION_OPTIONS.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            <CatalogImagesInput
+              supabase={supabase}
+              brand={publishTarget.company}
+              model={publishTarget.model}
+              images={publishImages}
+              onChange={setPublishImages}
+              label="Catalog Images"
+              hint="These images will be stored in vendor offers and published to the catalog."
+            />
+
+            <div className="flex gap-2.5">
+              <button className="btn-primary flex-1 justify-center" onClick={handlePublish} disabled={publishLoading}>
+                {publishLoading ? 'Publishing...' : 'Publish'}
+              </button>
+              <button className="btn-secondary min-w-[90px]" onClick={closePublish}>Cancel</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

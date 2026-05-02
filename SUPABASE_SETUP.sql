@@ -149,6 +149,7 @@ CREATE TABLE IF NOT EXISTS public.inventory (
 
   -- ── Flexible specs ──
   specifications      JSONB          DEFAULT '{}',              -- any extra key-value pairs
+  images              TEXT[]         DEFAULT '{}',              -- optional image URLs for catalog
 
   -- ── Lineage ──
   purchase_id         UUID           REFERENCES public.purchases(id) ON DELETE SET NULL,
@@ -157,6 +158,10 @@ CREATE TABLE IF NOT EXISTS public.inventory (
   created_at          TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
   updated_at          TIMESTAMPTZ    DEFAULT NOW()
 );
+
+-- Add images column to inventory (idempotent)
+ALTER TABLE public.inventory
+  ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}';
 
 
 -- ╔═══════════════════════════════════════════════════════════╗
@@ -414,9 +419,14 @@ CREATE TABLE IF NOT EXISTS public.vendor_offers (
   condition           TEXT,
   cost_price          NUMERIC(12,2),
   comment             TEXT,
+  images              TEXT[]         DEFAULT '{}',
   created_at          TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
   updated_at          TIMESTAMPTZ
 );
+
+-- Add images column to vendor_offers (idempotent)
+ALTER TABLE public.vendor_offers
+  ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}';
 
 
 -- ╔═══════════════════════════════════════════════════════════╗
@@ -574,6 +584,59 @@ GRANT ALL ON public.vendor_offers            TO anon;
 GRANT ALL ON public.processors               TO anon;
 GRANT ALL ON public.laptop_models            TO anon;
 GRANT ALL ON public.deleted_items            TO anon;
+
+
+-- ═══════════════════════════════════════════════════════════════
+-- STORAGE — public bucket for catalog images
+-- ═══════════════════════════════════════════════════════════════
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('catalog_images', 'catalog_images', true)
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage' AND tablename = 'objects'
+      AND policyname = 'catalog_images_public_read'
+  ) THEN
+    CREATE POLICY "catalog_images_public_read" ON storage.objects
+      FOR SELECT USING (bucket_id = 'catalog_images');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage' AND tablename = 'objects'
+      AND policyname = 'catalog_images_anon_insert'
+  ) THEN
+    CREATE POLICY "catalog_images_anon_insert" ON storage.objects
+      FOR INSERT TO anon WITH CHECK (bucket_id = 'catalog_images');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage' AND tablename = 'objects'
+      AND policyname = 'catalog_images_anon_update'
+  ) THEN
+    CREATE POLICY "catalog_images_anon_update" ON storage.objects
+      FOR UPDATE TO anon USING (bucket_id = 'catalog_images')
+      WITH CHECK (bucket_id = 'catalog_images');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage' AND tablename = 'objects'
+      AND policyname = 'catalog_images_anon_delete'
+  ) THEN
+    CREATE POLICY "catalog_images_anon_delete" ON storage.objects
+      FOR DELETE TO anon USING (bucket_id = 'catalog_images');
+  END IF;
+END $$;
+
+GRANT SELECT ON storage.buckets TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon;
 
 
 -- ═══════════════════════════════════════════════════════════════
@@ -1134,6 +1197,7 @@ CREATE POLICY "Allow all operations on users" ON users
 CREATE TABLE IF NOT EXISTS laptops (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   offer_id UUID REFERENCES public.vendor_offers(id) ON DELETE SET NULL,
+  inventory_id UUID REFERENCES public.inventory(id) ON DELETE SET NULL,
   brand TEXT NOT NULL,
   model TEXT NOT NULL,
   cpu TEXT NOT NULL,
@@ -1154,6 +1218,7 @@ CREATE TABLE IF NOT EXISTS laptops (
 CREATE INDEX IF NOT EXISTS idx_laptops_brand ON laptops(brand);
 CREATE INDEX IF NOT EXISTS idx_laptops_price ON laptops(price);
 CREATE INDEX IF NOT EXISTS idx_laptops_offer_id ON laptops(offer_id);
+CREATE INDEX IF NOT EXISTS idx_laptops_inventory_id ON laptops(inventory_id);
 
 CREATE TRIGGER laptops_updated_at
   BEFORE UPDATE ON laptops
@@ -1177,6 +1242,10 @@ CREATE POLICY "Allow all write on laptops" ON laptops
 -- Add offer_id column to laptops for linking (if not exists)
 ALTER TABLE laptops ADD COLUMN IF NOT EXISTS offer_id UUID REFERENCES public.vendor_offers(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_laptops_offer_id ON laptops(offer_id);
+
+-- Add inventory_id column to laptops for linking (if not exists)
+ALTER TABLE laptops ADD COLUMN IF NOT EXISTS inventory_id UUID REFERENCES public.inventory(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_laptops_inventory_id ON laptops(inventory_id);
 
 
 
