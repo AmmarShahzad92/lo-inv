@@ -1195,17 +1195,21 @@ CREATE TABLE IF NOT EXISTS laptops (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   offer_id UUID REFERENCES public.vendor_offers(id) ON DELETE SET NULL,
   inventory_id UUID REFERENCES public.inventory(id) ON DELETE SET NULL,
+  category TEXT DEFAULT 'laptop',
+  status TEXT DEFAULT 'live',
   brand TEXT NOT NULL,
   model TEXT NOT NULL,
-  cpu TEXT NOT NULL,
-  ram TEXT NOT NULL,
-  storage TEXT NOT NULL,
-  gpu TEXT NOT NULL,
-  screen TEXT NOT NULL,
+  cpu TEXT,
+  ram TEXT,
+  storage JSONB DEFAULT '{}'::jsonb,
+  gpu JSONB DEFAULT '{}'::jsonb,
+  screen TEXT,
   condition TEXT DEFAULT 'New',
   price INTEGER NOT NULL,
   qty INTEGER DEFAULT 0,
   images TEXT[] DEFAULT '{}',
+  wattage INTEGER,
+  connector_type TEXT,
   highlights TEXT[] DEFAULT '{}',
   specs JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -1214,6 +1218,8 @@ CREATE TABLE IF NOT EXISTS laptops (
 
 CREATE INDEX IF NOT EXISTS idx_laptops_brand ON laptops(brand);
 CREATE INDEX IF NOT EXISTS idx_laptops_price ON laptops(price);
+CREATE INDEX IF NOT EXISTS idx_laptops_status ON laptops(status);
+CREATE INDEX IF NOT EXISTS idx_laptops_category ON laptops(category);
 CREATE INDEX IF NOT EXISTS idx_laptops_offer_id ON laptops(offer_id);
 CREATE INDEX IF NOT EXISTS idx_laptops_inventory_id ON laptops(inventory_id);
 
@@ -1243,6 +1249,33 @@ CREATE INDEX IF NOT EXISTS idx_laptops_offer_id ON laptops(offer_id);
 -- Add inventory_id column to laptops for linking (if not exists)
 ALTER TABLE laptops ADD COLUMN IF NOT EXISTS inventory_id UUID REFERENCES public.inventory(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_laptops_inventory_id ON laptops(inventory_id);
+
+-- Add catalog metadata columns (idempotent)
+ALTER TABLE laptops ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'laptop';
+ALTER TABLE laptops ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'live';
+ALTER TABLE laptops ADD COLUMN IF NOT EXISTS wattage INTEGER;
+ALTER TABLE laptops ADD COLUMN IF NOT EXISTS connector_type TEXT;
+
+-- Migrate storage/gpu to JSONB (idempotent)
+ALTER TABLE laptops
+  ALTER COLUMN storage TYPE JSONB
+  USING (CASE
+    WHEN storage IS NULL OR storage = '' THEN '{}'::jsonb
+    ELSE jsonb_build_object('primary', storage)
+  END);
+
+ALTER TABLE laptops
+  ALTER COLUMN gpu TYPE JSONB
+  USING (CASE
+    WHEN gpu IS NULL OR gpu = '' THEN '{}'::jsonb
+    ELSE jsonb_build_object('integrated', gpu)
+  END);
+
+ALTER TABLE laptops ALTER COLUMN cpu DROP NOT NULL;
+ALTER TABLE laptops ALTER COLUMN ram DROP NOT NULL;
+ALTER TABLE laptops ALTER COLUMN storage DROP NOT NULL;
+ALTER TABLE laptops ALTER COLUMN gpu DROP NOT NULL;
+ALTER TABLE laptops ALTER COLUMN screen DROP NOT NULL;
 
 
 
