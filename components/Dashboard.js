@@ -4,8 +4,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { deleteWithLog } from '@/lib/deleteWithLog'
-import CatalogImagesInput from '@/components/CatalogImagesInput'
-import { normalizeImages } from '@/lib/catalogImages'
 import { extractCPUKey, getProcessorSpecsFromDB } from '@/lib/laptopKB'
 import { useApp } from '@/lib/AppContext'
 
@@ -296,7 +294,6 @@ export default function Dashboard({
   const [publishPrice, setPublishPrice] = useState('')
   const [publishQty, setPublishQty] = useState('1')
   const [publishCondition, setPublishCondition] = useState('Good')
-  const [publishImages, setPublishImages] = useState([])
   const [publishError, setPublishError] = useState('')
   const [publishLoading, setPublishLoading] = useState(false)
 
@@ -449,7 +446,6 @@ export default function Dashboard({
     setPublishPrice(String(item.min_sale_price || item.cost_price || ''))
     setPublishQty('1')
     setPublishCondition('Good')
-    setPublishImages(normalizeImages(item.images))
     setPublishError('')
   }
 
@@ -505,11 +501,6 @@ export default function Dashboard({
 
   async function handlePublish() {
     if (!publishTarget) return
-    const images = normalizeImages(publishImages)
-    if (!images.length) {
-      setPublishError('Add at least one image before publishing.')
-      return
-    }
     const price = Number(publishPrice)
     if (!Number.isFinite(price) || price <= 0) {
       setPublishError('Enter a valid price.')
@@ -520,27 +511,9 @@ export default function Dashboard({
     setPublishLoading(true)
     setPublishError('')
 
-    const { error: inventoryUpdateErr } = await supabase
-      .from('inventory')
-      .update({ images, updated_at: new Date().toISOString() })
-      .eq('id', publishTarget.id)
-
-    if (inventoryUpdateErr) {
-      setPublishError(inventoryUpdateErr.message)
-      setPublishLoading(false)
-      return
-    }
-
-    const payload = buildLaptopPayloadFromInventory(publishTarget, {
-      images,
-      price,
-      qty,
-      condition: publishCondition,
-    })
-
     const { data: existing, error: lookupError } = await supabase
       .from('laptops')
-      .select('id')
+      .select('id, images')
       .eq('inventory_id', publishTarget.id)
       .maybeSingle()
 
@@ -549,6 +522,14 @@ export default function Dashboard({
       setPublishLoading(false)
       return
     }
+
+    const images = Array.isArray(existing?.images) ? existing.images : []
+    const payload = buildLaptopPayloadFromInventory(publishTarget, {
+      images,
+      price,
+      qty,
+      condition: publishCondition,
+    })
 
     if (existing) {
       const { error } = await supabase.from('laptops').update(payload).eq('id', existing.id)
@@ -568,7 +549,6 @@ export default function Dashboard({
       }
     }
 
-    setInventory(prev => prev.map(i => i.id === publishTarget.id ? { ...i, images } : i))
     setPublishLoading(false)
     closePublishModal()
   }
@@ -916,16 +896,6 @@ export default function Dashboard({
                 ))}
               </select>
             </div>
-
-            <CatalogImagesInput
-              supabase={supabase}
-              brand={publishTarget.company}
-              model={publishTarget.model}
-              images={publishImages}
-              onChange={setPublishImages}
-              label="Catalog Images"
-              hint="These images will be stored on inventory and published to the catalog."
-            />
 
             <div className="flex gap-2.5">
               <button className="btn-primary flex-1 justify-center" onClick={handlePublish} disabled={publishLoading}>

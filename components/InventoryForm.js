@@ -11,8 +11,6 @@ import {
   getProcessorSpecsFromDB,
 } from '@/lib/laptopKB'
 import { useApp } from '@/lib/AppContext'
-import CatalogImagesInput from '@/components/CatalogImagesInput'
-import { normalizeImages } from '@/lib/catalogImages'
 
 const CATEGORY_OPTIONS = [
   { value: 'laptop', label: 'Laptop' },
@@ -135,7 +133,6 @@ function getInitialForm(item) {
     notes: item?.notes || '',
     purchase_id: item?.purchase_id || '',
     liability_amount: '',
-    images: normalizeImages(item?.images),
   }
 }
 
@@ -270,7 +267,6 @@ export default function InventoryForm({ user, partners, mode, item }) {
       min_sale_price: f.min_sale_price,
       notes: f.notes,
       purchase_id: f.purchase_id,
-      images: f.images,
     }))
     setAutoSpecs(null)
     setModelSuggestions([])
@@ -335,7 +331,6 @@ export default function InventoryForm({ user, partners, mode, item }) {
       notes: form.notes.trim() || null,
       specifications: Object.keys(cleanSpecs).length > 0 ? cleanSpecs : null,
       purchase_id: form.purchase_id || null,
-      images: normalizeImages(form.images),
     }
 
     // Category-specific fields
@@ -867,15 +862,6 @@ export default function InventoryForm({ user, partners, mode, item }) {
             />
           </div>
 
-          <CatalogImagesInput
-            supabase={supabase}
-            brand={form.company}
-            model={form.model}
-            images={form.images}
-            onChange={(images) => setForm(f => ({ ...f, images }))}
-            label="Catalog Images"
-            hint="Optional images that can be reused when publishing to catalog."
-          />
 
           {/* ── Collapsible Technical Specifications (JSONB) ───────────────── */}
           <div style={{ marginBottom: '24px' }}>
