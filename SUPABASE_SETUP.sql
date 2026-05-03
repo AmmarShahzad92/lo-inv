@@ -93,10 +93,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_rule_per_investor
 
 
 -- ╔═══════════════════════════════════════════════════════════╗
--- ║  4. PURCHASES                                            ║
+-- ║  4. PURCHASES                                             ║
 -- ║  Each purchase order. One purchase can add multiple       ║
 -- ║  inventory items. Any unpaid balance auto-creates a       ║
--- ║  liability (handled at app layer).                       ║
+-- ║  liability (handled at app layer).                        ║
 -- ╚═══════════════════════════════════════════════════════════╝
 CREATE TABLE IF NOT EXISTS public.purchases (
   id                  UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -113,14 +113,14 @@ CREATE TABLE IF NOT EXISTS public.purchases (
 );
 
 
--- ╔═══════════════════════════════════════════════════════════╗
+-- ╔══════════════════════════════════════════════════════════╗
 -- ║  5. INVENTORY                                            ║
 -- ║  Unified stock table — laptops, RAM sticks, SSDs,        ║
 -- ║  chargers, accessories, etc. Laptop-specific columns     ║
 -- ║  are nullable; other items use item_name + specs JSONB.  ║
 -- ║                                                          ║
 -- ║  status flow: in_stock → sold / returned / damaged       ║
--- ╚═══════════════════════════════════════════════════════════╝
+-- ╚══════════════════════════════════════════════════════════╝
 CREATE TABLE IF NOT EXISTS public.inventory (
   id                  UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
   -- ── Classification ──
@@ -164,11 +164,11 @@ ALTER TABLE public.inventory
   ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}';
 
 
--- ╔═══════════════════════════════════════════════════════════╗
+-- ╔══════════════════════════════════════════════════════════╗
 -- ║  6. LIABILITIES                                          ║
 -- ║  Debts / pending payments. Can be linked to a purchase   ║
 -- ║  or stand-alone. Settled from profit or petty cash.      ║
--- ╚═══════════════════════════════════════════════════════════╝
+-- ╚══════════════════════════════════════════════════════════╝
 CREATE TABLE IF NOT EXISTS public.liabilities (
   id                  UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
   description         TEXT           NOT NULL,
@@ -189,10 +189,10 @@ CREATE TABLE IF NOT EXISTS public.liabilities (
 
 
 -- ╔═══════════════════════════════════════════════════════════╗
--- ║  7. EXPENSES                                             ║
--- ║  Operating costs. Can be linked to a specific purchase   ║
--- ║  (transport, fuel for pickup, etc.) or stand-alone.      ║
--- ║  Deducted from sale profit or petty cash.                ║
+-- ║  7. EXPENSES                                              ║
+-- ║  Operating costs. Can be linked to a specific purchase    ║
+-- ║  (transport, fuel for pickup, etc.) or stand-alone.       ║
+-- ║  Deducted from sale profit or petty cash.                 ║
 -- ╚═══════════════════════════════════════════════════════════╝
 CREATE TABLE IF NOT EXISTS public.expenses (
   id                  UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS public.expenses (
 );
 
 
--- ╔═══════════════════════════════════════════════════════════╗
+-- ╔══════════════════════════════════════════════════════════╗
 -- ║  8. SALES                                                ║
 -- ║  Every sale with a complete P&L waterfall:               ║
 -- ║                                                          ║
@@ -226,7 +226,7 @@ CREATE TABLE IF NOT EXISTS public.expenses (
 -- ║                                                          ║
 -- ║  No restriction on sale_price — min_sale_price is        ║
 -- ║  advisory only. Negative profit is allowed (loss).       ║
--- ╚═══════════════════════════════════════════════════════════╝
+-- ╚══════════════════════════════════════════════════════════╝
 CREATE TABLE IF NOT EXISTS public.sales (
   id                      UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
   inventory_item_id       UUID           NOT NULL REFERENCES public.inventory(id),
@@ -293,7 +293,7 @@ ALTER TABLE public.expenses
   FOREIGN KEY (sale_id) REFERENCES public.sales(id) ON DELETE SET NULL;
 
 
--- ╔═══════════════════════════════════════════════════════════╗
+-- ╔══════════════════════════════════════════════════════════╗
 -- ║  9. ENTERPRISE CAPITAL (singleton)                       ║
 -- ║  The nerve centre of the business's cash position.       ║
 -- ║                                                          ║
@@ -305,7 +305,7 @@ ALTER TABLE public.expenses
 -- ║                                                          ║
 -- ║  total_net_assets = liquid_assets + petty_cash           ║
 -- ║                   + solid_assets (inventory at cost)     ║
--- ╚═══════════════════════════════════════════════════════════╝
+-- ╚══════════════════════════════════════════════════════════╝
 CREATE TABLE IF NOT EXISTS public.enterprise_capital (
   id                  UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
   liquid_assets       NUMERIC(15,2) NOT NULL DEFAULT 0,        -- cash on hand (PKR)
@@ -319,11 +319,11 @@ VALUES (0, 0)
 ON CONFLICT DO NOTHING;
 
 
--- ╔═══════════════════════════════════════════════════════════╗
+-- ╔══════════════════════════════════════════════════════════╗
 -- ║  10. CAPITAL LEDGER                                      ║
 -- ║  Immutable audit log of every movement in/out of         ║
 -- ║  Enterprise Capital. positive = inflow, negative = out.  ║
--- ╚═══════════════════════════════════════════════════════════╝
+-- ╚══════════════════════════════════════════════════════════╝
 CREATE TABLE IF NOT EXISTS public.capital_ledger (
   id                  UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
   transaction_type    TEXT           NOT NULL
@@ -430,7 +430,7 @@ ALTER TABLE public.vendor_offers
 
 
 -- ╔═══════════════════════════════════════════════════════════╗
--- ║  14. PROCESSORS — Knowledge Base (carried forward)       ║
+-- ║  14. PROCESSORS — Knowledge Base (carried forward)        ║
 -- ╚═══════════════════════════════════════════════════════════╝
 CREATE TABLE IF NOT EXISTS public.processors (
   id                UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -457,7 +457,7 @@ CREATE TABLE IF NOT EXISTS public.processors (
 
 
 -- ╔═══════════════════════════════════════════════════════════╗
--- ║  15. LAPTOP MODELS — Knowledge Base (carried forward)    ║
+-- ║  15. LAPTOP MODELS — Knowledge Base (carried forward)     ║
 -- ╚═══════════════════════════════════════════════════════════╝
 CREATE TABLE IF NOT EXISTS public.laptop_models (
   id                UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
