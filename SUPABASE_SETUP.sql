@@ -149,7 +149,6 @@ CREATE TABLE IF NOT EXISTS public.inventory (
 
   -- ── Flexible specs ──
   specifications      JSONB          DEFAULT '{}',              -- any extra key-value pairs
-  images              TEXT[]         DEFAULT '{}',              -- optional image URLs for catalog
 
   -- ── Lineage ──
   purchase_id         UUID           REFERENCES public.purchases(id) ON DELETE SET NULL,
@@ -159,9 +158,7 @@ CREATE TABLE IF NOT EXISTS public.inventory (
   updated_at          TIMESTAMPTZ    DEFAULT NOW()
 );
 
--- Add images column to inventory (idempotent)
-ALTER TABLE public.inventory
-  ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}';
+
 
 
 -- ╔══════════════════════════════════════════════════════════╗

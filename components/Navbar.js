@@ -16,6 +16,7 @@ export function getDisplayName(user) {
 
 const NAV_LINKS = [
   { href: '/', label: 'Inventory' },
+  { href: '/catalog', label: 'Catalog' },
   { href: '/sales', label: 'Sales' },
   { href: '/purchases', label: 'Purchases' },
   { href: '/finance', label: 'Finance' },
