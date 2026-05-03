@@ -350,7 +350,7 @@ export default function InventoryForm({ user, partners, mode, item }) {
     } else {
       payload.item_name = form.item_name.trim()
       payload.company = null
-      payload.model = null
+      payload.model = form.item_name.trim()
       payload.processor = null
       payload.screen_size = null
       payload.graphics_card = null

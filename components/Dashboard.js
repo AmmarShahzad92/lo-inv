@@ -458,7 +458,7 @@ export default function Dashboard({
     const cpuKey = extractCPUKey(item.processor)
     const cpuSpecs = cpuKey ? getProcessorSpecsFromDB(cpuKey, processors) : null
 
-    const storage = [item.ssd_size, item.ssd_category].filter(Boolean).join(' ') || item.ssd_name || 'N/A'
+    const storageValue = [item.ssd_size, item.ssd_category].filter(Boolean).join(' ') || item.ssd_name || null
 
     const specs = cpuSpecs ? {
       cpu_gen: cpuSpecs.gen,
@@ -476,18 +476,20 @@ export default function Dashboard({
     const highlights = []
     if (item.processor) highlights.push(item.processor)
     if (item.ram_size) highlights.push(`${item.ram_size} RAM`)
-    if (storage) highlights.push(storage)
+    if (storageValue) highlights.push(storageValue)
     if (condition) highlights.push(condition)
     if (item.screen_size) highlights.push(`${item.screen_size} Display`)
 
     return {
       inventory_id: item.id,
-      brand: item.company?.trim() || 'N/A',
-      model: item.model?.trim() || 'N/A',
+      category: item.category || 'laptop',
+      status: 'live',
+      brand: item.company?.trim() || item.item_name?.trim() || 'N/A',
+      model: item.model?.trim() || item.item_name?.trim() || 'N/A',
       cpu: item.processor?.trim() || 'N/A',
       ram: item.ram_size || 'N/A',
-      storage,
-      gpu: item.graphics_card?.trim() || cpuSpecs?.gpu || 'Integrated',
+      storage: storageValue ? { primary: storageValue } : {},
+      gpu: { dedicated: item.graphics_card?.trim() || cpuSpecs?.gpu || 'Integrated' },
       screen: item.screen_size || 'N/A',
       condition: condition || 'Good',
       price,
