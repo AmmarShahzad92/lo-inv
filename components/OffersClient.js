@@ -634,6 +634,8 @@ export default function OffersClient({ user, initialOffers }) {
   function buildLaptopPayloadFromOffer(offer, { images, price, qty, condition }) {
     const cpuKey = extractCPUKey(offer.processor)
     const cpuSpecs = cpuKey ? getProcessorSpecsFromDB(cpuKey, processors) : null
+    const storageValue = offer.storage?.trim() || null
+    const gpuValue = offer.graphics_card?.trim() || cpuSpecs?.gpu || 'Integrated'
 
     const specs = cpuSpecs ? {
       cpu_gen: cpuSpecs.gen,
@@ -649,18 +651,19 @@ export default function OffersClient({ user, initialOffers }) {
     const highlights = []
     if (offer.processor) highlights.push(offer.processor)
     if (offer.ram) highlights.push(`${offer.ram} RAM`)
-    if (offer.storage) highlights.push(offer.storage)
+    if (storageValue) highlights.push(storageValue)
     if (condition) highlights.push(condition)
     if (offer.screen_size) highlights.push(`${offer.screen_size} Display`)
 
     return {
       offer_id: offer.id,
+      status: 'live',
       brand: offer.company?.trim() || 'N/A',
       model: offer.model?.trim() || 'N/A',
       cpu: offer.processor?.trim() || 'N/A',
       ram: offer.ram || 'N/A',
-      storage: offer.storage || 'N/A',
-      gpu: offer.graphics_card?.trim() || cpuSpecs?.gpu || 'Integrated',
+      storage: storageValue ? { primary: storageValue } : {},
+      gpu: { dedicated: gpuValue },
       screen: offer.screen_size || 'N/A',
       condition: condition || 'New',
       price,
