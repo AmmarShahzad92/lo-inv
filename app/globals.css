@@ -156,12 +156,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--text-muted) 55%, transparent);
+  background: color-mix(in srgb, var(--accent-blue) 70%, transparent);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: var(--accent-blue-hover);
 }
 
 .scrollbar-hide {
