@@ -7,15 +7,15 @@ import CatalogForm from '@/components/CatalogForm'
 export const metadata = { title: 'Add to Catalog — Laptops Officials' }
 
 export default async function AddCatalogItemPage() {
-  const user = await getSession()
-  if (!user) redirect('/login')
+    const user = await getSession()
+    if (!user) redirect('/login')
 
-  return (
-    <div className="app-shell">
-      <Navbar user={user} />
-      <main className="app-content">
-        <CatalogForm user={user} mode="add" />
-      </main>
-    </div>
-  )
+    return (
+        <div className="app-shell">
+            <Navbar user={user} />
+            <main className="app-content">
+                <CatalogForm user={user} mode="add" />
+            </main>
+        </div>
+    )
 }
