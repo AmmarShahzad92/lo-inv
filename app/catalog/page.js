@@ -48,6 +48,7 @@ function getItemTitle(item) {
 }
 
 function CatalogItemRow({ item, onDelete, onStatusChange, isDeleting }) {
+    const [open, setOpen] = useState(false)
     const [updatingStatus, setUpdatingStatus] = useState(false)
     const supabase = createClient()
     const isLaptop = item.category === 'laptop'
@@ -63,79 +64,144 @@ function CatalogItemRow({ item, onDelete, onStatusChange, isDeleting }) {
 
     const storageLabel = getStorageLabel(item.storage)
     const gpuLabel = getGpuLabel(item.gpu)
+    const hasDetails = Boolean(
+        item.highlights?.length ||
+        storageLabel ||
+        gpuLabel ||
+        item.screen ||
+        item.condition ||
+        item.specs && Object.keys(item.specs || {}).length > 0 ||
+        item.wattage ||
+        item.connector_type
+    )
 
     return (
-        <div className="item-row">
-            {/* Col 1: Title + subtitle */}
-            <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 md:block">
-                    <div className="font-bold text-[14px] text-[var(--text-primary)] leading-snug truncate">
-                        {getItemTitle(item)}
+        <div>
+            <div className="item-row">
+                {/* Col 1: Title + subtitle */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 md:block">
+                        <div className="font-bold text-[14px] text-[var(--text-primary)] leading-snug truncate">
+                            {getItemTitle(item)}
+                        </div>
+                        <div className="md:hidden shrink-0 mt-0.5">
+                            <span className="badge badge-amber" style={{ fontSize: '10px' }}>{item.category || 'item'}</span>
+                        </div>
                     </div>
-                    <div className="md:hidden shrink-0 mt-0.5">
-                        <span className="badge badge-amber" style={{ fontSize: '10px' }}>{item.category || 'item'}</span>
-                    </div>
-                </div>
-                {item.cpu && (
-                    <div className="text-[12px] text-[var(--text-secondary)] truncate mt-0.5">{item.cpu}</div>
-                )}
-            </div>
-
-            {/* Col 2: Spec badges */}
-            <div className="flex flex-wrap gap-1.5 shrink-0 md:w-44">
-                {item.ram && <span className="badge badge-blue text-[11px]">{item.ram}</span>}
-                {storageLabel && <span className="badge badge-green text-[11px]">{storageLabel}</span>}
-                {!isLaptop && (
-                    <span className="badge badge-amber text-[11px] hidden md:inline-flex">{item.category}</span>
-                )}
-            </div>
-
-            {/* Col 3: Price */}
-            <div className="hidden md:block w-32 shrink-0 text-right">
-                <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">Price</div>
-                <div className="text-[13px] font-bold text-[var(--text-primary)]">{formatPrice(item.price)}</div>
-            </div>
-
-            {/* Col 4: GPU */}
-            <div className="hidden lg:block w-36 shrink-0">
-                <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">GPU</div>
-                <div className="text-[12px] text-[var(--text-secondary)] truncate">{gpuLabel || '—'}</div>
-            </div>
-
-            {/* Col 5: Status */}
-            <div className="hidden lg:block w-32 shrink-0">
-                <select
-                    value={item.status}
-                    onChange={e => handleStatusChange(e.target.value)}
-                    disabled={updatingStatus}
-                    className="form-input"
-                    style={{ fontSize: '11px', padding: '6px 8px' }}
-                >
-                    <option value="live">live</option>
-                    <option value="paused">paused</option>
-                    <option value="discontinued">discontinued</option>
-                </select>
-            </div>
-
-            {/* Col 6: Actions */}
-            <div className="flex items-center gap-1 shrink-0 flex-wrap">
-                <Link href={`/catalog/edit/${item.id}`} className="btn-xs no-underline">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                    Edit
-                </Link>
-                <button className="btn-xs btn-xs-red" onClick={() => onDelete(item)} disabled={isDeleting}>
-                    {isDeleting ? <div className="spinner" style={{ width: '10px', height: '10px' }} /> : (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                            <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
-                        </svg>
+                    {item.cpu && (
+                        <div className="text-[12px] text-[var(--text-secondary)] truncate mt-0.5">{item.cpu}</div>
                     )}
-                    Delete
-                </button>
+                </div>
+
+                {/* Col 2: Spec badges */}
+                <div className="flex flex-wrap gap-1.5 shrink-0 md:w-44">
+                    {item.ram && <span className="badge badge-blue text-[11px]">{item.ram}</span>}
+                    {storageLabel && <span className="badge badge-green text-[11px]">{storageLabel}</span>}
+                    {!isLaptop && (
+                        <span className="badge badge-amber text-[11px] hidden md:inline-flex">{item.category}</span>
+                    )}
+                </div>
+
+                {/* Col 3: Price */}
+                <div className="hidden md:block w-32 shrink-0 text-right">
+                    <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">Price</div>
+                    <div className="text-[13px] font-bold text-[var(--text-primary)]">{formatPrice(item.price)}</div>
+                </div>
+
+                {/* Col 4: GPU */}
+                <div className="hidden lg:block w-36 shrink-0">
+                    <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">GPU</div>
+                    <div className="text-[12px] text-[var(--text-secondary)] truncate">{gpuLabel || '—'}</div>
+                </div>
+
+                {/* Col 5: Status */}
+                <div className="hidden lg:block w-32 shrink-0">
+                    <select
+                        value={item.status}
+                        onChange={e => handleStatusChange(e.target.value)}
+                        disabled={updatingStatus}
+                        className="form-input"
+                        style={{ fontSize: '11px', padding: '6px 8px' }}
+                    >
+                        <option value="live">live</option>
+                        <option value="paused">paused</option>
+                        <option value="discontinued">discontinued</option>
+                    </select>
+                </div>
+
+                {/* Col 6: Actions */}
+                <div className="flex items-center gap-1 shrink-0 flex-wrap">
+                    <Link href={`/catalog/edit/${item.id}`} className="btn-xs no-underline">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        Edit
+                    </Link>
+                    <button className="btn-xs btn-xs-red" onClick={() => onDelete(item)} disabled={isDeleting}>
+                        {isDeleting ? <div className="spinner" style={{ width: '10px', height: '10px' }} /> : (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
+                            </svg>
+                        )}
+                        Delete
+                    </button>
+                    {hasDetails && (
+                        <button className="btn-details" onClick={() => setOpen(o => !o)}>
+                            {open ? '\u25B2' : '\u25BC'} {open ? 'Less' : 'More'}
+                        </button>
+                    )}
+                </div>
             </div>
+
+            {open && (
+                <div className="mx-0 mt-1 mb-1 px-4 py-3 rounded-lg text-[12px]"
+                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 mb-3">
+                        {item.screen && (
+                            <div><span className="text-[var(--text-muted)]">Screen: </span><span className="text-[var(--text-secondary)]">{item.screen}</span></div>
+                        )}
+                        {storageLabel && (
+                            <div><span className="text-[var(--text-muted)]">Storage: </span><span className="text-[var(--text-secondary)]">{storageLabel}</span></div>
+                        )}
+                        {gpuLabel && (
+                            <div><span className="text-[var(--text-muted)]">GPU: </span><span className="text-[var(--text-secondary)]">{gpuLabel}</span></div>
+                        )}
+                        {item.condition && (
+                            <div><span className="text-[var(--text-muted)]">Condition: </span><span className="text-[var(--text-secondary)]">{item.condition}</span></div>
+                        )}
+                        {item.wattage && (
+                            <div><span className="text-[var(--text-muted)]">Wattage: </span><span className="text-[var(--text-secondary)]">{item.wattage}W</span></div>
+                        )}
+                        {item.connector_type && (
+                            <div><span className="text-[var(--text-muted)]">Connector: </span><span className="text-[var(--text-secondary)]">{item.connector_type}</span></div>
+                        )}
+                    </div>
+
+                    {item.highlights && Array.isArray(item.highlights) && item.highlights.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                            {item.highlights.map((h, i) => (
+                                <span key={`${item.id}-hl-${i}`} className="px-2 py-0.5 rounded text-[11px] text-[var(--text-muted)]"
+                                    style={{ background: 'var(--bg-card)' }}>
+                                    {h}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {item.specs && Object.keys(item.specs).length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {Object.entries(item.specs).map(([key, value]) => (
+                                <span key={`${item.id}-spec-${key}`} className="px-2 py-0.5 rounded text-[11px] text-[var(--text-muted)]"
+                                    style={{ background: 'var(--bg-card)' }}>
+                                    {key}: {String(value)}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     )
 }
@@ -245,18 +311,18 @@ export default function CatalogPage() {
                     </div>
                     <div className="flex flex-wrap gap-2 items-center">
                         <select className="form-input" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ minWidth: '110px', fontSize: '12px', padding: '6px 8px' }}>
-                        <option value="">All Status</option>
-                        <option value="live">live</option>
-                        <option value="paused">paused</option>
-                        <option value="discontinued">discontinued</option>
+                            <option value="">All Status</option>
+                            <option value="live">live</option>
+                            <option value="paused">paused</option>
+                            <option value="discontinued">discontinued</option>
                         </select>
                         <select className="form-input" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ minWidth: '120px', fontSize: '12px', padding: '6px 8px' }}>
-                        <option value="">All Categories</option>
-                        {CATEGORY_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                            <option value="">All Categories</option>
+                            {CATEGORY_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                         </select>
                         <select className="form-input" value={brandFilter} onChange={e => setBrandFilter(e.target.value)} style={{ minWidth: '120px', fontSize: '12px', padding: '6px 8px' }}>
-                        <option value="">All Brands</option>
-                        {brands.map(b => <option key={b} value={b}>{b}</option>)}
+                            <option value="">All Brands</option>
+                            {brands.map(b => <option key={b} value={b}>{b}</option>)}
                         </select>
                     </div>
                     <Link href="/catalog/add" className="btn-primary no-underline whitespace-nowrap">
