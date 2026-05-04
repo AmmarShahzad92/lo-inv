@@ -23,12 +23,6 @@ export default function CatalogImagesInput({
   const [files, setFiles] = useState([])
 
   const normalized = normalizeImages(images, maxImages)
-  const slots = Array.from({ length: maxImages }, (_, i) => normalized[i] || '')
-
-  function updateSlot(index, value) {
-    const next = slots.map((slot, i) => (i === index ? value : slot))
-    onChange(normalizeImages(next, maxImages))
-  }
 
   async function handleUpload() {
     if (!supabase) {
@@ -61,18 +55,6 @@ export default function CatalogImagesInput({
     <div className="mb-3 p-3 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
       <div className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1">{label}</div>
       <div className="text-[11px] text-[var(--text-muted)] mb-2">{hint}</div>
-
-      <div className="grid grid-cols-1 gap-2 mb-2">
-        {slots.map((value, idx) => (
-          <input
-            key={idx}
-            className="form-input"
-            value={value}
-            onChange={(e) => updateSlot(idx, e.target.value)}
-            placeholder={`Image URL ${idx + 1} (optional)`}
-          />
-        ))}
-      </div>
 
       <div className="flex flex-wrap gap-2 items-center">
         <input
