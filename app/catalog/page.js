@@ -229,7 +229,7 @@ export default function CatalogPage() {
                 </div>
 
                 {/* ── Header ───────────────────────────────────────── */}
-                <div className="flex items-center gap-3 flex-wrap mb-4">
+                <div className="flex items-center gap-2 flex-wrap mb-4">
                     <div>
                         <h2 className="text-[15px] font-semibold text-[var(--text-primary)] m-0">Catalog Items</h2>
                         <p className="text-[12px] text-[var(--text-muted)] mt-0.5 m-0">{filtered.length} of {items.length} items</p>
@@ -243,20 +243,22 @@ export default function CatalogPage() {
                             placeholder="Search product, brand, model, processor..."
                             style={{ paddingLeft: '32px', fontSize: '13px' }} />
                     </div>
-                    <select className="form-input" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ minWidth: '130px' }}>
+                    <div className="flex flex-wrap gap-2 items-center">
+                        <select className="form-input" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ minWidth: '110px', fontSize: '12px', padding: '6px 8px' }}>
                         <option value="">All Status</option>
                         <option value="live">live</option>
                         <option value="paused">paused</option>
                         <option value="discontinued">discontinued</option>
-                    </select>
-                    <select className="form-input" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ minWidth: '130px' }}>
+                        </select>
+                        <select className="form-input" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ minWidth: '120px', fontSize: '12px', padding: '6px 8px' }}>
                         <option value="">All Categories</option>
                         {CATEGORY_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                    </select>
-                    <select className="form-input" value={brandFilter} onChange={e => setBrandFilter(e.target.value)} style={{ minWidth: '130px' }}>
+                        </select>
+                        <select className="form-input" value={brandFilter} onChange={e => setBrandFilter(e.target.value)} style={{ minWidth: '120px', fontSize: '12px', padding: '6px 8px' }}>
                         <option value="">All Brands</option>
                         {brands.map(b => <option key={b} value={b}>{b}</option>)}
-                    </select>
+                        </select>
+                    </div>
                     <Link href="/catalog/add" className="btn-primary no-underline whitespace-nowrap">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
