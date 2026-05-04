@@ -3,9 +3,16 @@
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
+
+const CATEGORY_OPTIONS = [
+    { value: 'laptop', label: 'Laptop' },
+    { value: 'ram', label: 'RAM' },
+    { value: 'ssd', label: 'SSD' },
+    { value: 'charger', label: 'Charger' },
+    { value: 'accessory', label: 'Accessory' },
+    { value: 'other', label: 'Other' },
+]
 
 function formatPrice(amount) {
     return amount != null ? `PKR ${Number(amount).toLocaleString('en-PK')}` : '—'
@@ -36,22 +43,14 @@ function getGpuLabel(gpu) {
     return ''
 }
 
-function getBadgeClass(label) {
-    if (!label) return 'badge badge-gray'
-    const lower = String(label).toLowerCase()
-    if (lower.includes('gb') || lower.includes('ram')) return 'badge badge-purple'
-    if (lower.includes('storage') || lower.includes('ssd') || lower.includes('nvme')) return 'badge badge-green'
-    if (lower.includes('gpu') || lower.includes('graphics') || lower.includes('nvidia') || lower.includes('amd') || lower.includes('intel')) return 'badge badge-blue'
-    return 'badge badge-amber'
-}
-
 function getItemTitle(item) {
     return [item.brand, item.model].filter(Boolean).join(' ') || item.item_name || 'Untitled'
 }
 
-function CatalogItemCard({ item, user, onEdit, onDelete, onStatusChange, isDeleting }) {
+function CatalogItemRow({ item, onDelete, onStatusChange, isDeleting }) {
     const [updatingStatus, setUpdatingStatus] = useState(false)
     const supabase = createClient()
+    const isLaptop = item.category === 'laptop'
 
     async function handleStatusChange(newStatus) {
         setUpdatingStatus(true)
@@ -62,46 +61,69 @@ function CatalogItemCard({ item, user, onEdit, onDelete, onStatusChange, isDelet
         }
     }
 
+    const storageLabel = getStorageLabel(item.storage)
+    const gpuLabel = getGpuLabel(item.gpu)
+
     return (
-        <div className="p-4 rounded-lg border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-            <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-[13px] text-[var(--text-primary)] truncate">{getItemTitle(item)}</div>
-                    <div className="text-[11px] text-[var(--text-muted)] mt-0.5">{item.cpu || 'CPU unknown'}</div>
+        <div className="item-row">
+            {/* Col 1: Title + subtitle */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2 md:block">
+                    <div className="font-bold text-[14px] text-[var(--text-primary)] leading-snug truncate">
+                        {getItemTitle(item)}
+                    </div>
+                    <div className="md:hidden shrink-0 mt-0.5">
+                        <span className="badge badge-amber" style={{ fontSize: '10px' }}>{item.category || 'item'}</span>
+                    </div>
                 </div>
+                {item.cpu && (
+                    <div className="text-[12px] text-[var(--text-secondary)] truncate mt-0.5">{item.cpu}</div>
+                )}
+            </div>
+
+            {/* Col 2: Spec badges */}
+            <div className="flex flex-wrap gap-1.5 shrink-0 md:w-44">
+                {item.ram && <span className="badge badge-blue text-[11px]">{item.ram}</span>}
+                {storageLabel && <span className="badge badge-green text-[11px]">{storageLabel}</span>}
+                {!isLaptop && (
+                    <span className="badge badge-amber text-[11px] hidden md:inline-flex">{item.category}</span>
+                )}
+            </div>
+
+            {/* Col 3: Price */}
+            <div className="hidden md:block w-32 shrink-0 text-right">
+                <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">Price</div>
+                <div className="text-[13px] font-bold text-[var(--text-primary)]">{formatPrice(item.price)}</div>
+            </div>
+
+            {/* Col 4: GPU */}
+            <div className="hidden lg:block w-36 shrink-0">
+                <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide">GPU</div>
+                <div className="text-[12px] text-[var(--text-secondary)] truncate">{gpuLabel || '—'}</div>
+            </div>
+
+            {/* Col 5: Status */}
+            <div className="hidden lg:block w-32 shrink-0">
                 <select
                     value={item.status}
                     onChange={e => handleStatusChange(e.target.value)}
                     disabled={updatingStatus}
                     className="form-input"
-                    style={{ fontSize: '11px', padding: '4px 8px', minWidth: '80px' }}>
+                    style={{ fontSize: '11px', padding: '6px 8px' }}
+                >
                     <option value="live">live</option>
                     <option value="paused">paused</option>
                     <option value="discontinued">discontinued</option>
                 </select>
             </div>
 
-            <div className="flex flex-wrap gap-1.5 mb-3">
-                {item.highlights && Array.isArray(item.highlights) && item.highlights.slice(0, 3).map((h, i) => (
-                    <span key={i} className={`badge text-[10px] px-2 py-0.5`} style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
-                        {h}
-                    </span>
-                ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mb-3 text-[11px]">
-                <div><span className="text-[var(--text-muted)]">Category:</span> <span className="text-[var(--text-secondary)]">{item.category}</span></div>
-                <div><span className="text-[var(--text-muted)]">Storage:</span> <span className="text-[var(--text-secondary)]">{getStorageLabel(item.storage) || '—'}</span></div>
-                <div><span className="text-[var(--text-muted)]">GPU:</span> <span className="text-[var(--text-secondary)]">{getGpuLabel(item.gpu) || '—'}</span></div>
-                <div><span className="text-[var(--text-muted)]">Qty:</span> <span className="text-[var(--text-secondary)]">{item.qty ?? 0}</span></div>
-            </div>
-
-            <div className="mb-3 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
-                <div className="font-semibold text-[14px] text-[var(--text-primary)]">{formatPrice(item.price)}</div>
-            </div>
-
-            <div className="flex gap-1.5">
-                <Link href={`/catalog/edit/${item.id}`} className="btn-xs btn-xs-blue" style={{ flex: 1, textAlign: 'center' }}>
+            {/* Col 6: Actions */}
+            <div className="flex items-center gap-1 shrink-0 flex-wrap">
+                <Link href={`/catalog/edit/${item.id}`} className="btn-xs no-underline">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
                     Edit
                 </Link>
                 <button className="btn-xs btn-xs-red" onClick={() => onDelete(item)} disabled={isDeleting}>
@@ -119,10 +141,12 @@ function CatalogItemCard({ item, user, onEdit, onDelete, onStatusChange, isDelet
 }
 
 export default function CatalogPage() {
-    const router = useRouter()
     const [items, setItems] = useState([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
+    const [statusFilter, setStatusFilter] = useState('')
+    const [categoryFilter, setCategoryFilter] = useState('')
+    const [brandFilter, setBrandFilter] = useState('')
     const [deletingId, setDeletingId] = useState(null)
     const supabase = createClient()
 
@@ -147,16 +171,21 @@ export default function CatalogPage() {
         return { total, live, paused, discontinued }
     }, [items])
 
+    const brands = useMemo(() => Array.from(new Set(items.map(i => i.brand).filter(Boolean))).sort((a, b) => a.localeCompare(b)), [items])
+
     const filtered = useMemo(() => {
-        if (!search) return items
         const q = search.toLowerCase()
         return items.filter(i => {
+            if (statusFilter && i.status !== statusFilter) return false
+            if (categoryFilter && i.category !== categoryFilter) return false
+            if (brandFilter && i.brand !== brandFilter) return false
+            if (!q) return true
             const title = getItemTitle(i).toLowerCase()
             const cpu = (i.cpu || '').toLowerCase()
             const cat = (i.category || '').toLowerCase()
             return title.includes(q) || cpu.includes(q) || cat.includes(q)
         })
-    }, [items, search])
+    }, [items, search, statusFilter, categoryFilter, brandFilter])
 
     async function handleDelete(item) {
         const label = getItemTitle(item)
@@ -214,6 +243,20 @@ export default function CatalogPage() {
                             placeholder="Search product, brand, model, processor..."
                             style={{ paddingLeft: '32px', fontSize: '13px' }} />
                     </div>
+                    <select className="form-input" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ minWidth: '130px' }}>
+                        <option value="">All Status</option>
+                        <option value="live">live</option>
+                        <option value="paused">paused</option>
+                        <option value="discontinued">discontinued</option>
+                    </select>
+                    <select className="form-input" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ minWidth: '130px' }}>
+                        <option value="">All Categories</option>
+                        {CATEGORY_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                    <select className="form-input" value={brandFilter} onChange={e => setBrandFilter(e.target.value)} style={{ minWidth: '130px' }}>
+                        <option value="">All Brands</option>
+                        {brands.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
                     <Link href="/catalog/add" className="btn-primary no-underline whitespace-nowrap">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -238,12 +281,11 @@ export default function CatalogPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 gap-3">
                         {filtered.map(item => (
-                            <CatalogItemCard
+                            <CatalogItemRow
                                 key={item.id}
                                 item={item}
-                                user={null}
                                 onDelete={handleDelete}
                                 onStatusChange={handleStatusChange}
                                 isDeleting={deletingId === item.id}
