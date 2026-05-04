@@ -677,7 +677,9 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
 
 @media (min-width: 1024px) {
   .navbar {
-    position: relative;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
     width: 280px;
     min-width: 280px;
     height: 100vh;
