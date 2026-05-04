@@ -12,7 +12,7 @@
   --bg-input: #dce4ef;
   --bg-surface: #e5ecf5;
 
-  --border: rgba(255,255,255,0.72);
+  --border: rgba(255, 255, 255, 0.72);
   --border-focus: #4b8cff;
 
   --text-primary: #23324a;
@@ -45,11 +45,11 @@
     2px 2px 6px #cad3df,
     -2px -2px 6px #ffffff;
   --neu-glow-blue:
-    0 0 24px rgba(75,140,255,0.2),
+    0 0 24px rgba(75, 140, 255, 0.2),
     10px 10px 22px #c7d0dc,
     -10px -10px 22px #ffffff;
   --neu-glow-green:
-    0 0 24px rgba(33,179,123,0.18),
+    0 0 24px rgba(33, 179, 123, 0.18),
     10px 10px 22px #c7d0dc,
     -10px -10px 22px #ffffff;
 }
@@ -62,7 +62,7 @@ html[data-theme='dark'] {
   --bg-input: #14171b;
   --bg-surface: #1f2328;
 
-  --border: rgba(255,255,255,0.06);
+  --border: rgba(255, 255, 255, 0.06);
   --border-focus: #4a8af8;
 
   --text-primary: #eceff3;
@@ -77,31 +77,31 @@ html[data-theme='dark'] {
   --accent-purple: #95a0b3;
 
   --neu-shadow-raised:
-    6px 6px 14px rgba(0,0,0,0.55),
-    -6px -6px 14px rgba(255,255,255,0.02);
+    6px 6px 14px rgba(0, 0, 0, 0.55),
+    -6px -6px 14px rgba(255, 255, 255, 0.02);
   --neu-shadow-raised-sm:
-    3px 3px 8px rgba(0,0,0,0.45),
-    -3px -3px 8px rgba(255,255,255,0.02);
+    3px 3px 8px rgba(0, 0, 0, 0.45),
+    -3px -3px 8px rgba(255, 255, 255, 0.02);
   --neu-shadow-raised-xs:
-    2px 2px 5px rgba(0,0,0,0.35),
-    -2px -2px 5px rgba(255,255,255,0.02);
+    2px 2px 5px rgba(0, 0, 0, 0.35),
+    -2px -2px 5px rgba(255, 255, 255, 0.02);
   --neu-shadow-pressed:
-    inset 3px 3px 7px rgba(0,0,0,0.55),
-    inset -3px -3px 7px rgba(255,255,255,0.02);
+    inset 3px 3px 7px rgba(0, 0, 0, 0.55),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.02);
   --neu-shadow-pressed-sm:
-    inset 2px 2px 5px rgba(0,0,0,0.45),
-    inset -2px -2px 5px rgba(255,255,255,0.02);
+    inset 2px 2px 5px rgba(0, 0, 0, 0.45),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.02);
   --neu-shadow-flat:
-    2px 2px 6px rgba(0,0,0,0.35),
-    -2px -2px 6px rgba(255,255,255,0.02);
+    2px 2px 6px rgba(0, 0, 0, 0.35),
+    -2px -2px 6px rgba(255, 255, 255, 0.02);
   --neu-glow-blue:
-    0 0 20px rgba(59,130,246,0.15),
-    6px 6px 14px rgba(0,0,0,0.55),
-    -6px -6px 14px rgba(255,255,255,0.02);
+    0 0 20px rgba(59, 130, 246, 0.15),
+    6px 6px 14px rgba(0, 0, 0, 0.55),
+    -6px -6px 14px rgba(255, 255, 255, 0.02);
   --neu-glow-green:
-    0 0 20px rgba(16,185,129,0.12),
-    6px 6px 14px rgba(0,0,0,0.55),
-    -6px -6px 14px rgba(255,255,255,0.02);
+    0 0 20px rgba(16, 185, 129, 0.12),
+    6px 6px 14px rgba(0, 0, 0, 0.55),
+    -6px -6px 14px rgba(255, 255, 255, 0.02);
 }
 
 @theme inline {
@@ -111,7 +111,9 @@ html[data-theme='dark'] {
   --font-mono: var(--font-geist-mono);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   background: var(--bg-primary);
@@ -144,20 +146,51 @@ body {
 }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-secondary); }
-::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text-muted) 55%, transparent); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-.scrollbar-hide::-webkit-scrollbar { display: none; }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-muted) 55%, transparent);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
 
 /* ═══════════════════════════════════════════════════════════
    NEUMORPHIC UTILITIES
    ═══════════════════════════════════════════════════════════ */
-.neu-raised    { box-shadow: var(--neu-shadow-raised); }
-.neu-raised-sm { box-shadow: var(--neu-shadow-raised-sm); }
-.neu-pressed   { box-shadow: var(--neu-shadow-pressed); }
-.neu-flat      { box-shadow: var(--neu-shadow-flat); }
+.neu-raised {
+  box-shadow: var(--neu-shadow-raised);
+}
+
+.neu-raised-sm {
+  box-shadow: var(--neu-shadow-raised-sm);
+}
+
+.neu-pressed {
+  box-shadow: var(--neu-shadow-pressed);
+}
+
+.neu-flat {
+  box-shadow: var(--neu-shadow-flat);
+}
 
 /* ═══════════════════════════════════════════════════════════
    CARD
@@ -184,13 +217,17 @@ body {
   box-shadow: var(--neu-shadow-pressed-sm);
   transition: box-shadow 0.2s, border-color 0.2s;
 }
+
 .form-input:focus {
   border-color: var(--border-focus);
   box-shadow:
     var(--neu-shadow-pressed-sm),
-    0 0 0 3px rgba(59,130,246,0.12);
+    0 0 0 3px rgba(59, 130, 246, 0.12);
 }
-.form-input::placeholder { color: var(--text-muted); }
+
+.form-input::placeholder {
+  color: var(--text-muted);
+}
 
 select.form-input {
   appearance: none;
@@ -199,7 +236,11 @@ select.form-input {
   background-position: right 12px center;
   padding-right: 32px;
 }
-select.form-input option { background: var(--bg-card); color: var(--text-primary); }
+
+select.form-input option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
 
 .form-label {
   display: block;
@@ -229,10 +270,12 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   box-shadow: var(--neu-shadow-raised-sm);
   transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
 }
+
 .btn-primary:hover {
   background: var(--accent-blue-hover);
   box-shadow: var(--neu-glow-blue);
 }
+
 .btn-primary:active {
   box-shadow: var(--neu-shadow-pressed-sm);
   transform: scale(0.97);
@@ -250,11 +293,13 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   box-shadow: var(--neu-shadow-raised-sm);
   transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
+
 .btn-secondary:hover {
   background: var(--bg-card-hover);
   color: var(--text-primary);
   box-shadow: var(--neu-shadow-raised);
 }
+
 .btn-secondary:active {
   box-shadow: var(--neu-shadow-pressed-sm);
 }
@@ -271,10 +316,12 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   box-shadow: var(--neu-shadow-raised-xs);
   transition: background 0.15s, box-shadow 0.15s;
 }
+
 .btn-danger:hover {
-  background: rgba(239,68,68,0.08);
-  box-shadow: 0 0 15px rgba(239,68,68,0.1), var(--neu-shadow-raised-xs);
+  background: rgba(239, 68, 68, 0.08);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.1), var(--neu-shadow-raised-xs);
 }
+
 .btn-danger:active {
   box-shadow: var(--neu-shadow-pressed-sm);
 }
@@ -288,6 +335,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   border-spacing: 0;
   font-size: 13px;
 }
+
 .data-table thead th {
   background: var(--bg-secondary);
   color: var(--text-muted);
@@ -301,21 +349,33 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   top: 0;
   z-index: 1;
 }
-.data-table thead th:first-child { border-radius: 10px 0 0 0; }
-.data-table thead th:last-child  { border-radius: 0 10px 0 0; }
+
+.data-table thead th:first-child {
+  border-radius: 10px 0 0 0;
+}
+
+.data-table thead th:last-child {
+  border-radius: 0 10px 0 0;
+}
+
 .data-table tbody tr {
   transition: background 0.1s, box-shadow 0.15s;
 }
+
 .data-table tbody tr:hover {
   background: var(--bg-card-hover);
 }
+
 .data-table tbody td {
   padding: 12px 14px;
   color: var(--text-primary);
   vertical-align: middle;
   border-bottom: 1px solid var(--border);
 }
-.data-table tbody tr:last-child td { border-bottom: none; }
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
 
 /* ═══════════════════════════════════════════════════════════
    BADGES
@@ -330,11 +390,31 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   box-shadow: var(--neu-shadow-raised-xs);
   border: none;
 }
-.badge-green  { background: rgba(16,185,129,0.12); color: var(--accent-green); }
-.badge-blue   { background: rgba(59,130,246,0.12); color: var(--accent-blue); }
-.badge-amber  { background: rgba(245,158,11,0.12); color: var(--accent-amber); }
-.badge-red    { background: rgba(239,68,68,0.12);  color: var(--accent-red); }
-.badge-purple { background: rgba(139,92,246,0.12); color: #a78bfa; }
+
+.badge-green {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--accent-green);
+}
+
+.badge-blue {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--accent-blue);
+}
+
+.badge-amber {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--accent-amber);
+}
+
+.badge-red {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--accent-red);
+}
+
+.badge-purple {
+  background: rgba(139, 92, 246, 0.12);
+  color: #a78bfa;
+}
 
 /* ═══════════════════════════════════════════════════════════
    STAT CARD — Raised, Glow on hover
@@ -347,6 +427,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   border: none;
   transition: box-shadow 0.25s;
 }
+
 .stat-card:hover {
   box-shadow: var(--neu-glow-blue);
 }
@@ -361,6 +442,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   overflow: hidden;
   box-shadow: var(--neu-shadow-pressed-sm);
 }
+
 .progress-fill {
   height: 100%;
   border-radius: 6px;
@@ -371,7 +453,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
    ALERTS
    ═══════════════════════════════════════════════════════════ */
 .alert-error {
-  background: rgba(239,68,68,0.08);
+  background: rgba(239, 68, 68, 0.08);
   color: #fca5a5;
   border-radius: 10px;
   padding: 12px 16px;
@@ -379,8 +461,9 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   border: none;
   box-shadow: var(--neu-shadow-raised-xs);
 }
+
 .alert-success {
-  background: rgba(16,185,129,0.08);
+  background: rgba(16, 185, 129, 0.08);
   color: #6ee7b7;
   border-radius: 10px;
   padding: 12px 16px;
@@ -393,16 +476,31 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
    ANIMATIONS
    ═══════════════════════════════════════════════════════════ */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in { animation: fadeIn 0.25s ease forwards; }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease forwards;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .spinner {
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(255,255,255,0.15);
+  border: 2px solid rgba(255, 255, 255, 0.15);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
@@ -411,7 +509,10 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
 /* ═══════════════════════════════════════════════════════════
    COMPANY / CATEGORY GROUPED ITEM LIST
    ═══════════════════════════════════════════════════════════ */
-.company-section { margin-bottom: 32px; }
+.company-section {
+  margin-bottom: 32px;
+}
+
 .company-header {
   font-size: 11px;
   font-weight: 700;
@@ -425,7 +526,12 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   gap: 8px;
   border-bottom: 1px solid var(--border);
 }
-.item-list { display: flex; flex-direction: column; gap: 6px; }
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
 /* ═══════════════════════════════════════════════════════════
    ITEM ROW — Raised neumorphic
@@ -442,12 +548,19 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   transition: box-shadow 0.2s, transform 0.15s;
   min-width: 0;
 }
+
 .item-row:hover {
   box-shadow: var(--neu-glow-blue);
   transform: translateY(-1px);
 }
+
 @media (max-width: 767px) {
-  .item-row { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 14px; }
+  .item-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 14px;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -461,19 +574,39 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   border: none;
   transition: box-shadow 0.2s;
 }
+
 .laptop-card:hover {
   box-shadow: var(--neu-glow-blue);
 }
-.card-details { overflow: hidden; transition: max-height 0.25s ease, opacity 0.2s ease; }
+
+.card-details {
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+}
 
 /* Inline edit form grid */
-.inline-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-@media (min-width: 640px) { .inline-form-grid { grid-template-columns: 1fr 1fr 1fr; } }
+.inline-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .inline-form-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
 
 /* ═══════════════════════════════════════════════════════════
    ACTION BUTTONS (xs size)
    ═══════════════════════════════════════════════════════════ */
-.card-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+.card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 12px;
+}
 
 .btn-xs {
   display: inline-flex;
@@ -491,31 +624,45 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   box-shadow: var(--neu-shadow-raised-xs);
   transition: box-shadow 0.15s, color 0.15s;
 }
+
 .btn-xs:hover {
   color: var(--accent-blue);
   box-shadow: var(--neu-shadow-raised-sm);
 }
+
 .btn-xs:active {
   box-shadow: var(--neu-shadow-pressed-sm);
 }
+
 .btn-xs-green {
-  background: rgba(16,185,129,0.06);
+  background: rgba(16, 185, 129, 0.06);
   color: var(--accent-green);
   box-shadow: var(--neu-shadow-raised-xs);
 }
-.btn-xs-green:hover { box-shadow: 0 0 10px rgba(16,185,129,0.12), var(--neu-shadow-raised-xs); }
+
+.btn-xs-green:hover {
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.12), var(--neu-shadow-raised-xs);
+}
+
 .btn-xs-red {
-  background: rgba(239,68,68,0.04);
+  background: rgba(239, 68, 68, 0.04);
   color: var(--accent-red);
   box-shadow: var(--neu-shadow-raised-xs);
 }
-.btn-xs-red:hover { box-shadow: 0 0 10px rgba(239,68,68,0.1), var(--neu-shadow-raised-xs); }
+
+.btn-xs-red:hover {
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.1), var(--neu-shadow-raised-xs);
+}
+
 .btn-xs-amber {
-  background: rgba(245,158,11,0.06);
+  background: rgba(245, 158, 11, 0.06);
   color: var(--accent-amber);
   box-shadow: var(--neu-shadow-raised-xs);
 }
-.btn-xs-amber:hover { box-shadow: 0 0 10px rgba(245,158,11,0.1), var(--neu-shadow-raised-xs); }
+
+.btn-xs-amber:hover {
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.1), var(--neu-shadow-raised-xs);
+}
 
 .btn-details {
   display: inline-flex;
@@ -532,7 +679,10 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   transition: color 0.1s;
   white-space: nowrap;
 }
-.btn-details:hover { color: var(--text-secondary); }
+
+.btn-details:hover {
+  color: var(--text-secondary);
+}
 
 /* ═══════════════════════════════════════════════════════════
    MODAL OVERLAY
@@ -540,7 +690,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -548,6 +698,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   z-index: 50;
   padding: 16px;
 }
+
 .modal-card {
   background: var(--bg-card);
   border-radius: 20px;
@@ -570,6 +721,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   padding: 4px;
   box-shadow: var(--neu-shadow-pressed-sm);
 }
+
 .tab-btn {
   padding: 8px 16px;
   border-radius: 10px;
@@ -581,9 +733,11 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   color: var(--text-muted);
   transition: all 0.15s;
 }
+
 .tab-btn:hover {
   color: var(--text-secondary);
 }
+
 .tab-btn.active {
   background: var(--bg-card);
   color: var(--text-primary);
@@ -603,12 +757,14 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   box-shadow: var(--neu-shadow-pressed-sm);
   font-size: 13px;
 }
+
 .waterfall-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 4px 0;
 }
+
 .waterfall-row.total {
   border-top: 1px solid var(--border);
   padding-top: 8px;
@@ -621,7 +777,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
    ═══════════════════════════════════════════════════════════ */
 .navbar {
   background: var(--bg-secondary);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   position: sticky;
   top: 0;
   z-index: 40;
@@ -684,7 +840,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
     min-width: 280px;
     height: 100vh;
     border-right: 1px solid var(--border);
-    box-shadow: 6px 0 20px rgba(0,0,0,0.22);
+    box-shadow: 6px 0 20px rgba(0, 0, 0, 0.22);
     transition: width 0.24s ease, min-width 0.24s ease;
   }
 
@@ -748,7 +904,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
     border-left: none;
     border-right: 1px solid var(--border);
     background: var(--bg-secondary);
-    box-shadow: 6px 0 14px rgba(0,0,0,0.2);
+    box-shadow: 6px 0 14px rgba(0, 0, 0, 0.2);
   }
 
   .navbar.navbar-collapsed .navbar-brand-text,
@@ -757,6 +913,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
     display: none !important;
   }
 }
+
 .nav-link {
   padding: 6px 12px;
   border-radius: 8px;
@@ -771,11 +928,13 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   width: 100%;
   padding: 9px 12px;
 }
+
 .nav-link:hover {
   color: var(--text-primary);
   background: var(--bg-card);
   box-shadow: var(--neu-shadow-raised-xs);
 }
+
 .nav-link.active {
   color: var(--accent-blue);
   background: var(--bg-input);
@@ -868,7 +1027,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   position: fixed;
   inset: 0;
   z-index: 55;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(2px);
   display: flex;
   justify-content: flex-end;
@@ -881,7 +1040,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -949,6 +1108,7 @@ select.form-input option { background: var(--bg-card); color: var(--text-primary
   border: none;
   transition: box-shadow 0.25s, transform 0.15s;
 }
+
 .entity-card:hover {
   box-shadow: var(--neu-glow-blue);
   transform: translateY(-2px);
