@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { deleteWithLog } from '@/lib/deleteWithLog'
 import { extractCPUKey, getProcessorSpecsFromDB } from '@/lib/laptopKB'
+import { normalizeImages } from '@/lib/catalogImages'
 import { useApp } from '@/lib/AppContext'
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -525,7 +526,7 @@ export default function Dashboard({
       return
     }
 
-    const images = Array.isArray(existing?.images) ? existing.images : []
+    const images = normalizeImages(existing?.images)
     const payload = buildLaptopPayloadFromInventory(publishTarget, {
       images,
       price,
